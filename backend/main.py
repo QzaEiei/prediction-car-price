@@ -7,7 +7,7 @@ import pandas as pd
 import xgboost as xgb
 
 # โหลดโมเดล
-model = joblib.load('best_car_price_model.pkl')
+model = joblib.load('My_Best_XGBoost_Tuned.pkl')
 
 app = FastAPI()
 
@@ -52,3 +52,5 @@ def predict_price(item: CarItem):
         
     except Exception as e:
         return {"error": str(e)}
+    
+    #aaasdasdasd
