@@ -23,7 +23,7 @@ app.add_middleware(
 # รับค่า 5 ตัว ตามที่คุณระบุ
 class CarItem(BaseModel):
     Present_Price: float  # ราคามือหนึ่ง (แสนบาท)
-    Year: int             # ปีผลิต
+    Car_Age: int             # ปีผลิต
     Kms_Driven: int       # เลขไมล์
     Fuel_Type: int        # 0=Petrol, 1=Diesel, 2=CNG
     Transmission: int     # 0=Manual, 1=Auto
