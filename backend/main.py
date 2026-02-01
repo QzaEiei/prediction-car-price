@@ -4,6 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import pandas as pd
 import xgboost as xgb
+import sklearn  # <--- 1. ต้อง import อันนี้เพิ่ม
+
+# 2. บังคับให้ Pipeline ส่งต่อข้อมูลเป็น DataFrame (รักษาชื่อคอลัมน์ไว้)
+sklearn.set_config(transform_output="pandas")
 
 # โหลดโมเดล
 model = joblib.load('My_Best_XGBoost_Tuned.pkl')
@@ -18,35 +22,29 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# รับค่า 5 ตัว (รับ Car_Age มาเลย ตามที่ตกลงกับหน้าเว็บ)
 class CarItem(BaseModel):
-    Present_Price: float  # ราคามือหนึ่ง (แสนบาท)
-    Car_Age: int          # อายุรถ (หน้าเว็บคำนวณส่งมาให้แล้ว)
-    Kms_Driven: int       # เลขไมล์
-    Fuel_Type: int        # 0=Petrol, 1=Diesel, 2=CNG
-    Transmission: int     # 0=Manual, 1=Auto
+    Present_Price: float
+    Car_Age: int        # รับค่าอายุรถโดยตรง (Frontend คำนวณมาให้แล้ว)
+    Kms_Driven: int
+    Fuel_Type: int
+    Transmission: int
 
 @app.post("/predict")
 def predict_price(item: CarItem):
     try:
-        # 1. ไม่ต้องคำนวณอายุรถใหม่แล้ว! 
-        # เพราะ Frontend ส่ง item.Car_Age ที่ถูกต้องมาให้แล้ว ใช้ได้เลยครับ
-
-        # 2. เรียงข้อมูลใส่ DataFrame
-        # ⚠️ ลำดับคอลัมน์ต้องตรงกับตอนเทรนโมเดลเป๊ะๆ
+        # 3. สร้าง DataFrame (คอลัมน์ต้องเรียงเป๊ะๆ ตามตอน Train)
         data = pd.DataFrame([[
             item.Present_Price,
             item.Kms_Driven,
             item.Fuel_Type,
             item.Transmission,
-            item.Car_Age      # <--- ✅ ใช้ค่าจาก item.Car_Age ได้เลย
+            item.Car_Age  # <--- ใช้ item.Car_Age ได้เลย (ไม่ต้องลบปีแล้ว)
         ]], columns=['Present_Price', 'Kms_Driven', 'Fuel_Type', 'Transmission', 'Car_Age'])
         
-        # 3. ให้โมเดลทำนาย
+        # 4. ทำนายผล
         prediction = model.predict(data)
         
         return {"predicted_price": float(prediction[0])}
         
     except Exception as e:
-        # ส่ง error กลับไปดูว่าเกิดอะไรขึ้น
         return {"error": str(e)}
