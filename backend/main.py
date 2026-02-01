@@ -5,9 +5,9 @@ import joblib
 import pandas as pd
 import xgboost as xgb
 import sklearn  # <--- 1. ต้อง import อันนี้เพิ่ม
-
+from sklearn import set_config
 # 2. บังคับให้ Pipeline ส่งต่อข้อมูลเป็น DataFrame (รักษาชื่อคอลัมน์ไว้)
-sklearn.set_config(transform_output="pandas")
+set_config(transform_output="pandas")
 
 # โหลดโมเดล
 model = joblib.load('My_Best_XGBoost_Tuned.pkl')
