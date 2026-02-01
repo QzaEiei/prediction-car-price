@@ -6,6 +6,7 @@ import joblib
 import pandas as pd
 import xgboost as xgb
 
+
 # โหลดโมเดล
 model = joblib.load('My_Best_XGBoost_Tuned.pkl')
 
@@ -13,7 +14,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # อนุญาตให้ทุกเว็บเข้ามาใช้งาน (หรือจะใส่แค่ลิงก์ Vercel ก็ได้)
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
