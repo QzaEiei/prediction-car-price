@@ -3,18 +3,28 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import joblib
 import pandas as pd
-import xgboost as xgb
 import sklearn
 from sklearn import set_config
 
-# ✅ สั่งแก้บั๊กตรงนี้ (บรรทัดสำคัญที่สุด!)
-# สั่งให้ Scikit-learn ส่งข้อมูลเป็น DataFrame เสมอ (รักษาชื่อคอลัมน์ไว้)
+# ==========================================
+# 🔧 จุดแก้บั๊กที่ 1: ตั้งค่า Global Config
+# ==========================================
 set_config(transform_output="pandas")
+
+app = FastAPI()
 
 # โหลดโมเดล
 model = joblib.load('My_Best_XGBoost_Tuned.pkl')
 
-app = FastAPI()
+# ==========================================
+# 🔧 จุดแก้บั๊กที่ 2: บังคับตัวโมเดลที่โหลดมา (สำคัญมาก!)
+# ==========================================
+try:
+    if hasattr(model, 'set_output'):
+        model.set_output(transform="pandas")
+        print("✅ Force model to output Pandas DataFrame success!")
+except Exception as e:
+    print(f"⚠️ Cannot set output to pandas: {e}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -34,20 +44,21 @@ class CarItem(BaseModel):
 @app.post("/predict")
 def predict_price(item: CarItem):
     try:
-        # สร้าง DataFrame
-        # ⚠️ ชื่อคอลัมน์ต้องตรงกับตอน Train เป๊ะๆ
-        data = pd.DataFrame([[
-            item.Present_Price,
-            item.Kms_Driven,
-            item.Fuel_Type,
-            item.Transmission,
-            item.Car_Age
-        ]], columns=['Present_Price', 'Kms_Driven', 'Fuel_Type', 'Transmission', 'Car_Age'])
+        # เตรียมข้อมูล (ชื่อคอลัมน์ต้องเป๊ะ!)
+        data_input = {
+            'Present_Price': [item.Present_Price],
+            'Kms_Driven': [item.Kms_Driven],
+            'Fuel_Type': [item.Fuel_Type],
+            'Transmission': [item.Transmission],
+            'Car_Age': [item.Car_Age]
+        }
+        
+        df = pd.DataFrame(data_input)
         
         # ทำนายผล
-        prediction = model.predict(data)
-        
+        prediction = model.predict(df)
         return {"predicted_price": float(prediction[0])}
         
     except Exception as e:
+        # ส่ง Error กลับไปให้เห็นชัดๆ
         return {"error": str(e)}
