@@ -17,7 +17,7 @@ export default function Home() {
   const [price, setPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handlePredict = async (e: React.FormEvent) => {
+const handlePredict = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setPrice(null);
@@ -25,7 +25,6 @@ export default function Home() {
     const currentYear = new Date().getFullYear(); 
 
     try {
-      // 1. ส่งข้อมูลพื้นฐานไปถาม AI
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -43,15 +42,21 @@ export default function Home() {
       if (!res.ok) {
         console.error("Server Error:", data);
         const errorMsg = data.detail ? JSON.stringify(data.detail) : (data.error || "ข้อมูลไม่ถูกต้อง");
-        alert(`❌ เกิดข้อผิดพลาด (${res.status}):\n${errorMsg}`);
+        alert(`❌ Error (${res.status}):\n${errorMsg}`);
         return; 
       }
 
-      // 2. ได้ราคากลางจาก AI มาแล้ว
-      const basePrice = data.predicted_price;
+      // 🔍 DEBUG: เช็คว่าได้ค่า predicted_price มาจริงไหม?
+      console.log("Server Response:", data); // ดูใน Console (F12)
 
-      // 3. ปรับราคาตามสภาพรถ (เอา Base Price x ตัวคูณสภาพ)
-      // เช่น AI บอก 4 แสน แต่สภาพนางฟ้า (1.1) -> 400,000 * 1.1 = 440,000
+      if (data.predicted_price === undefined || data.predicted_price === null) {
+        // ถ้าไม่มีค่า ให้ Alert บอกว่า Server ส่งอะไรมาแทน
+        alert(`⚠️ Server ไม่ได้ส่งราคามา!\nข้อมูลที่ได้รับคือ:\n${JSON.stringify(data)}`);
+        return;
+      }
+
+      // ถ้ามีค่าถูกต้อง ก็คำนวณต่อ
+      const basePrice = Number(data.predicted_price);
       const finalPrice = basePrice * Number(condition);
 
       setPrice(finalPrice);
