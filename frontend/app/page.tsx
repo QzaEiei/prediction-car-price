@@ -19,13 +19,23 @@ export default function Home() {
     setLoading(true);
     setPrice(null);
 
+    // คำนวณปีปัจจุบัน เพื่อหาอายุรถ
+    const currentYear = new Date().getFullYear(); 
+
     try {
+      // ✅ ใช้ตัวแปร Environment Variable เพื่อดึงลิงก์จาก Vercel Settings
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           Present_Price: Number(presentPrice),
-          Year: Number(year),
+          
+          // -----------------------------------------------------
+          // 🛠️ จุดที่แก้ไข: คำนวณอายุรถส่งไปแทนปีผลิต
+          // สูตร: ปีปัจจุบัน - ปีที่กรอก = อายุรถ (Car_Age)
+          // -----------------------------------------------------
+          Car_Age: currentYear - Number(year), 
+          
           Kms_Driven: Number(kms),
           Fuel_Type: Number(fuelType),
           Transmission: Number(transmission),
@@ -40,7 +50,7 @@ export default function Home() {
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("เชื่อมต่อ Server ไม่ได้ (อย่าลืมรัน backend!)");
+      alert("เชื่อมต่อ Server ไม่ได้ (ตรวจสอบ Backend บน Render หรือลอง Redeploy Vercel)");
     } finally {
       setLoading(false);
     }
