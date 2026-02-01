@@ -14,6 +14,9 @@ export default function Home() {
   const [price, setPrice] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // ---------------------------------------------------------
+  // 👇 ส่วนที่แก้ไข: ฟังก์ชันนี้จะดัก Error ไม่ให้จอขาวครับ
+  // ---------------------------------------------------------
   const handlePredict = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -23,19 +26,12 @@ export default function Home() {
     const currentYear = new Date().getFullYear(); 
 
     try {
-      // ✅ ใช้ตัวแปร Environment Variable เพื่อดึงลิงก์จาก Vercel Settings
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           Present_Price: Number(presentPrice),
-          
-          // -----------------------------------------------------
-          // 🛠️ จุดที่แก้ไข: คำนวณอายุรถส่งไปแทนปีผลิต
-          // สูตร: ปีปัจจุบัน - ปีที่กรอก = อายุรถ (Car_Age)
-          // -----------------------------------------------------
-          Car_Age: currentYear - Number(year), 
-          
+          Car_Age: currentYear - Number(year), // คำนวณอายุรถ
           Kms_Driven: Number(kms),
           Fuel_Type: Number(fuelType),
           Transmission: Number(transmission),
@@ -43,11 +39,20 @@ export default function Home() {
       });
 
       const data = await res.json();
-      if (data.error) {
-        alert("เกิดข้อผิดพลาด: " + data.error);
-      } else {
-        setPrice(data.predicted_price);
+
+      // เช็คว่า Server ตอบกลับมาว่า OK หรือไม่
+      if (!res.ok) {
+        console.error("Server Error Response:", data);
+        // แสดงข้อความ Error ที่ Server ส่งมา
+        const errorMsg = data.detail ? JSON.stringify(data.detail) : (data.error || "ข้อมูลไม่ถูกต้อง");
+        alert(`❌ เกิดข้อผิดพลาด (${res.status}):\n${errorMsg}`);
+        setLoading(false);
+        return; 
       }
+
+      // ถ้าผ่านฉลุย ค่อยเซ็ตราคา
+      setPrice(data.predicted_price);
+
     } catch (error) {
       console.error("Error:", error);
       alert("เชื่อมต่อ Server ไม่ได้ (ตรวจสอบ Backend บน Render หรือลอง Redeploy Vercel)");
