@@ -1,0 +1,27 @@
+# --- Frontend (Next.js) ---
+frontend/node_modules/
+frontend/.next/
+frontend/.env
+frontend/.env.local
+frontend/build/
+frontend/dist/
+
+# --- Backend (Python) ---
+backend/venv/
+backend/env/
+backend/__pycache__/
+backend/*.pyc
+backend/.pytest_cache/
+
+# --- Data & Models ---
+# เราจะไม่อัปโหลดไฟล์ข้อมูลใหญ่ๆ หรือไฟล์โมเดลถ้ามันใหญ่เกิน 100MB
+*.csv
+*.xlsx
+# ถ้าไฟล์ model.pkl ไม่ใหญ่มาก (ไม่เกิน 100MB) เอาเครื่องหมาย # ข้างหน้าออกเพื่ออัปโหลดได้
+# *.pkl
+
+# --- System ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
