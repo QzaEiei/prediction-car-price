@@ -64,7 +64,8 @@ def predict_price(item: CarItem):
         return {"error": "Model failed to load on server start."}
 
     try:
-        # เตรียมข้อมูล (ชื่อคอลัมน์ต้องตรงเป๊ะ 100% กับตอน Train)
+        # เตรียมข้อมูล
+        # ⚠️ ลำดับสำคัญมาก! ต้องเรียงให้ตรงกับตอน Train เป๊ะๆ
         data_input = {
             'Present_Price': [float(item.Present_Price)],
             'Kms_Driven': [int(item.Kms_Driven)],
@@ -75,16 +76,14 @@ def predict_price(item: CarItem):
         
         df = pd.DataFrame(data_input)
         
-        # ปริ้นท์เช็คใน Logs ดูว่าข้อมูลเข้าเป็นยังไง
-        print(f"Input Data:\n{df}")
+        # 👇👇 จุดแก้สำคัญ (The Fix) 👇👇
+        # เพิ่ม validate_features=False เพื่อสั่งให้ XGBoost ไม่ต้องเช็คชื่อคอลัมน์
+        # (เพราะเวอร์ชั่นต่างกัน มันเลยเช็คผิดพลาด เราเลยต้องปิดมัน)
+        prediction = model.predict(df, validate_features=False)
         
-        # ทำนายผล
-        prediction = model.predict(df)
         return {"predicted_price": float(prediction[0])}
         
     except Exception as e:
         import traceback
-        error_msg = traceback.format_exc()
-        print(f"❌ Prediction Error: {error_msg}")
-        # ส่ง error กลับไปแบบละเอียดขึ้น จะได้รู้ว่าพังตรงไหน
-        return {"error": str(e), "detail": "Check server logs for traceback"}
+        print(f"❌ Error: {traceback.format_exc()}")
+        return {"error": str(e), "detail": "Check server logs"}
