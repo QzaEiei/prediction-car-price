@@ -102,7 +102,7 @@ export default function ValuCarPage() {
                 </label>
               </div>
 
-              {/* Brand Input */}
+              {/* Brand Inputa */}
               <div className="flex flex-col gap-2">
                 <label className="flex flex-col flex-1">
                   <p className="text-sm font-semibold pb-2 flex items-center gap-2 text-slate-700">
