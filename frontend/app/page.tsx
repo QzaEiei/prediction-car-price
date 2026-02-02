@@ -1,6 +1,6 @@
 // file: src/app/page.tsx
 'use client';
-
+import Link from "next/link";
 import { useState } from 'react';
 
 export default function Home() {
@@ -73,7 +73,12 @@ const handlePredict = async (e: React.FormEvent) => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg border border-gray-200">
         <h1 className="text-3xl font-bold mb-6 text-center text-blue-800">🔮 ประเมินราคารถ (ตามสภาพ)</h1>
-        
+        <Link 
+          href="/home" 
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition"
+        >
+          เข้าสู่หน้าหลัก (Home)
+        </Link>
         <form onSubmit={handlePredict} className="space-y-4">
           
           {/* 1. ราคามือหนึ่ง */}
