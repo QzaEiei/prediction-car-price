@@ -16,21 +16,15 @@ export default function RootLayout({
   return (
     <html lang="th">
       <head>
-        {/* --- ส่วนที่เพิ่มมา: โหลด Font และ Icon --- */}
-        
-        {/* Google Fonts: Sarabun & Manrope */}
-        <link 
+        {/* ... (ส่วน Link Font/Icon ที่คุณใส่ไว้ ถูกแล้วครับ) ... */}
+         <link 
           href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&family=Manrope:wght@400;500;700;800&display=swap" 
           rel="stylesheet"
         />
-        
-        {/* Material Symbols Icons */}
         <link 
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" 
           rel="stylesheet"
         />
-
-        {/* CSS สำหรับตั้งค่า Icon ให้แสดงผลถูกต้อง */}
         <style>{`
           .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -38,8 +32,15 @@ export default function RootLayout({
         `}</style>
       </head>
 
-      {/* เรียกใช้ font-display ที่ตั้งค่าไว้ใน tailwind.config.ts */}
       <body className="font-display antialiased">
+        
+        {/* --- ตัวอย่างการใช้ <Link> ที่คุณ import มา --- */}
+        <nav className=" bg-white shadow-sm flex ">
+            {/* <Link href="/" className="text-blue-600 font-bold">หน้าแรก</Link>
+            <Link href="/about" className="text-gray-600 hover:text-blue-500">เกี่ยวกับเรา</Link> */}
+        </nav>
+        {/* ------------------------------------------- */}
+
         {children}
       </body>
     </html>

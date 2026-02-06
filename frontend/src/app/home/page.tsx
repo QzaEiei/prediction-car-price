@@ -1,36 +1,30 @@
 "use client";
 
-import React from "react";
+import { useState } from "react";
+import Navbar from "../components/Navbar"; // ตรวจสอบ Path ให้ถูกต้อง
+import Link from "next/link";
 
 export default function ValuCarPage() {
+  
+  const scrollToForm = () => {
+    const formElement = document.getElementById("car-form");
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+  const [carData, setCarData] = useState({
+    year: "",
+    prodYear: "",
+    brand: "",
+    model: ""
+  });
+  
   return (
     // 1. แก้ส่วนนี้: ลบ dark mode ออก และใช้สีพื้นหลังเป็น slate-50 (สีเทาจางๆ สบายตา)
-    <div className="bg-slate-50 font-sans text-slate-900 min-h-screen flex flex-col overflow-x-hidden">
-      
+    <div className="bg-slate-50 font-sans text-slate-900 min-h-screen flex flex-col">
+    
       {/* --- Header --- */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 md:px-10 py-4">
-          <div className="flex items-center gap-3">
-            {/* 2. แก้สีไอคอนเป็นสีน้ำเงิน (blue-600) */}
-            <div className="text-blue-600 flex items-center justify-center">
-              <span className="material-symbols-outlined text-3xl">auto_awesome</span>
-            </div>
-            <h2 className="text-xl font-extrabold tracking-tight">ValuCar</h2>
-          </div>
-          <div className="flex flex-1 justify-end gap-8">
-            <nav className="hidden md:flex items-center gap-8">
-              <a className="text-sm font-semibold hover:text-blue-600 transition-colors" href="#">วิธีการใช้งาน</a>
-              <a className="text-sm font-semibold hover:text-blue-600 transition-colors" href="#">ราคา</a>
-              <a className="text-sm font-semibold hover:text-blue-600 transition-colors" href="#">รีวิวจากลูกค้า</a>
-              <a className="text-sm font-semibold hover:text-blue-600 transition-colors" href="#">ติดต่อเรา</a>
-            </nav>
-            {/* 3. แก้ปุ่ม Login เป็นสีน้ำเงินชัดๆ */}
-            <button className="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-5 bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all">
-              <span>เข้าสู่ระบบ</span>
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1">
         
@@ -57,9 +51,12 @@ export default function ValuCarPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 mt-4">
                     {/* 4. แก้ปุ่มเช็คราคาเป็นสีน้ำเงิน */}
-                    <button className="flex items-center justify-center rounded-lg h-14 px-8 bg-blue-600 text-white text-lg font-bold shadow-xl shadow-blue-600/30 hover:scale-[1.02] active:scale-95 transition-all">
-                      เช็กราคาเลย
-                    </button>
+                  <button 
+                    onClick={scrollToForm}
+                    className="flex items-center justify-center rounded-lg h-12 px-8 bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all min-w-[160px]"
+                  >
+                    เช็กราคาเลย
+                  </button>
                     <button className="flex items-center justify-center rounded-lg h-14 px-8 bg-white/10 backdrop-blur-md border border-white/20 text-white text-lg font-bold hover:bg-white/20 transition-all">
                       เรียนรู้เพิ่มเติม
                     </button>
@@ -71,7 +68,7 @@ export default function ValuCarPage() {
         </section>
 
         {/* --- Form Section --- */}
-        <section className="bg-white py-16">
+        <section id="car-form" className="bg-white py-16 scroll-mt-20">
           <div className="mx-auto max-w-[960px] px-6">
             <div className="text-center mb-10">
               <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider mb-4">ระบบคำนวณ</span>
@@ -79,94 +76,85 @@ export default function ValuCarPage() {
               <p className="mt-2 text-slate-500">ระบุข้อมูลเบื้องต้นเพื่อรับราคาประเมินที่แม่นยำตามข้อมูลตลาดล่าสุด</p>
             </div>
             
-            {/* กล่อง Form เป็นสีขาว ตัดขอบสีเทา */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-sm">
               
-              {/* Year Input */}
+              {/* 1. ปีที่จดทะเบียน (บนซ้าย) */}
               <div className="flex flex-col gap-2">
                 <label className="flex flex-col flex-1">
                   <p className="text-sm font-semibold pb-2 flex items-center gap-2 text-slate-700">
                     <span className="material-symbols-outlined text-blue-600 text-lg">calendar_today</span>
                     ปีที่จดทะเบียน
                   </p>
-                  <div className="relative">
-                    <select className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer">
-                      <option value="">เลือกปี</option>
-                      <option value="2024">2024</option>
-                      <option value="2023">2023</option>
-                      <option value="2022">2022</option>
-                      <option value="2021">2021</option>
-                      <option value="2020">2020</option>
-                    </select>
-                  </div>
+                  <select className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer">
+                    <option value="">เลือกปี</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                    <option value="2020">2020</option>
+                    <option value="2019">2019</option>
+                  </select>
                 </label>
               </div>
 
-              {/* Brand Inputa */}
+              {/* 2. ปีที่ผลิต (บนขวา) */}
               <div className="flex flex-col gap-2">
                 <label className="flex flex-col flex-1">
                   <p className="text-sm font-semibold pb-2 flex items-center gap-2 text-slate-700">
-                    <span className="material-symbols-outlined text-blue-600 text-lg">branding_watermark</span>
-                    ยี่ห้อ
+                    <span className="material-symbols-outlined text-blue-600 text-lg">event_available</span>
+                    ปีที่ผลิต
                   </p>
-                  <div className="relative">
-                    <select className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer">
-                      <option value="">เลือกยี่ห้อ</option>
-                      <option value="honda">Honda</option>
-                      <option value="toyota">Toyota</option>
-                      <option value="mazda">Mazda</option>
-                      <option value="mitsubishi">Mitsubishi</option>
-                      <option value="isuzu">Isuzu</option>
-                    </select>
-                  </div>
+                  <select className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer">
+                    <option value="">เลือกปีที่ผลิต</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                    <option value="2020">2020</option>
+                    <option value="2019">2019</option>
+                  </select>
                 </label>
               </div>
 
-              {/* Model Input */}
+              {/* 3. ยี่ห้อ (ล่างซ้าย) */}
               <div className="flex flex-col gap-2">
                 <label className="flex flex-col flex-1">
                   <p className="text-sm font-semibold pb-2 flex items-center gap-2 text-slate-700">
                     <span className="material-symbols-outlined text-blue-600 text-lg">directions_car</span>
-                    รุ่น
+                    ยี่ห้อ
                   </p>
-                  <div className="relative">
-                    <select className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer">
-                      <option value="">เลือกรุ่น</option>
-                      <option value="city">City</option>
-                      <option value="civic">Civic</option>
-                      <option value="accord">Accord</option>
-                      <option value="crv">CR-V</option>
-                    </select>
-                  </div>
+                  <select className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer">
+                    <option value="">เลือกยี่ห้อ</option>
+                    <option value="honda">Honda</option>
+                    <option value="toyota">Toyota</option>
+                  </select>
                 </label>
               </div>
 
-              {/* Sub-Model Input */}
+              {/* 4. รุ่น (ล่างขวา) */}
               <div className="flex flex-col gap-2">
                 <label className="flex flex-col flex-1">
                   <p className="text-sm font-semibold pb-2 flex items-center gap-2 text-slate-700">
-                    <span className="material-symbols-outlined text-blue-600 text-lg">settings_input_component</span>
-                    รุ่นย่อย
+                    <span className="material-symbols-outlined text-blue-600 text-lg">minor_crash</span>
+                    รุ่น
                   </p>
-                  <div className="relative">
-                    <select className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer">
-                      <option value="">เลือกรุ่นย่อย</option>
-                      <option value="v">V</option>
-                      <option value="sv">SV</option>
-                      <option value="rs">RS</option>
-                      <option value="hev-rs">e:HEV RS</option>
-                    </select>
-                  </div>
+                  <select className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer">
+                    <option value="">เลือกรุ่น</option>
+                    <option value="city">City</option>
+                    <option value="civic">Civic</option>
+                  </select>
                 </label>
               </div>
 
               {/* Submit Button */}
-              <div className="md:col-span-2 mt-4">
-                <button className="w-full flex items-center justify-center gap-2 rounded-lg h-14 bg-blue-600 text-white text-base font-bold shadow-lg shadow-blue-600/25 hover:bg-blue-700 transition-all">
-                  <span>เช็กราคาเลย</span>
+            <div className="md:col-span-2 mt-4">
+              <Link href="/detail" className="w-full">
+                <button className="w-full flex items-center justify-center gap-2 rounded-lg h-14 bg-blue-600 text-white text-base font-bold shadow-lg shadow-blue-600/25 hover:bg-blue-700 transition-all active:scale-[0.98]">
                   <span className="material-symbols-outlined">arrow_forward</span>
+                  <span>เช็กราคาเลย</span>
                 </button>
-              </div>
+              </Link>
+            </div>
             </div>
           </div>
         </section>
