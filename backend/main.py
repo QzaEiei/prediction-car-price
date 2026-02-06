@@ -81,7 +81,9 @@ def read_root():
 @app.post("/predict")
 def predict_price(item: CarItem):
     try:
-        # 1. Clean ข้อมูลเบื้องต้น (จัดการ String แปลกๆ)
+        # ====================================================
+        # 1. CLEANING DATA (เหมือนเดิม เพราะทำดีแล้ว)
+        # ====================================================
         clean_levy = 0
         try:
             val_levy = str(item.Levy).replace('-', '0')
@@ -108,7 +110,9 @@ def predict_price(item: CarItem):
             clean_mileage = int(float(val_mile))
         except: pass
 
-        # 2. สร้าง DataFrame
+        # ====================================================
+        # 2. สร้าง DataFrame และ Force Types (เหมือนเดิม)
+        # ====================================================
         data = {
             'Levy': [clean_levy],
             'Manufacturer': [item.Manufacturer],
@@ -129,10 +133,7 @@ def predict_price(item: CarItem):
         }
         df = pd.DataFrame(data)
 
-        # ==========================================================
-        # 🚨 NUCLEAR FIX: บังคับเปลี่ยนเป็นตัวเลข เดี๋ยวนี้! (Force Types)
-        # ==========================================================
-        # คำสั่งพวกนี้จะบังคับให้คอลัมน์พวกนี้เป็นตัวเลข ถ้าไม่ได้ให้เป็น 0
+        # Force Convert to Numeric
         df['Engine volume'] = pd.to_numeric(df['Engine volume'], errors='coerce').fillna(2.0)
         df['Mileage'] = pd.to_numeric(df['Mileage'], errors='coerce').fillna(0)
         df['Levy'] = pd.to_numeric(df['Levy'], errors='coerce').fillna(0)
@@ -140,31 +141,46 @@ def predict_price(item: CarItem):
         df['Cylinders'] = pd.to_numeric(df['Cylinders'], errors='coerce').fillna(4)
         df['Airbags'] = pd.to_numeric(df['Airbags'], errors='coerce').fillna(4)
         df['Doors'] = pd.to_numeric(df['Doors'], errors='coerce').fillna(4)
-        
-        # 3. แปลงหมวดหมู่ (Categorical)
+
+        # ====================================================
+        # 3. แปลงหมวดหมู่ (Encoding)
+        # ====================================================
         categorical_cols = [
             'Manufacturer', 'Model', 'Category', 'Leather interior', 
             'Fuel type', 'Gear box type', 'Drive wheels', 
             'Wheel', 'Color'
         ]
-
         for col in categorical_cols:
-            df[col] = df[col].astype(str) # แปลงเป็น string ก่อน map
+            df[col] = df[col].astype(str)
             if col in encoders:
                 le = encoders[col]
-                # Map ค่าที่ไม่รู้จักให้เป็นค่าแรก
                 df[col] = df[col].map(lambda s: s if s in le.classes_ else le.classes_[0])
                 df[col] = le.transform(df[col])
             else:
                 df[col] = 0
 
-        # ✅ DEBUG: ปริ้นประเภทข้อมูลออกมาดูเลยว่าใครยังดื้อเป็น Object อยู่ไหม
-        print("🔍 Checking Data Types before Predict:")
-        print(df.dtypes)
+        # ====================================================
+        # 🚨 4. ท่าไม้ตาย: เรียงคอลัมน์ + แปลงเป็น Numpy Array
+        # ====================================================
         
-        # 4. ทำนายผล
+        # 4.1 เรียงลำดับคอลัมน์ให้เป๊ะ 100% (กันพลาด)
+        required_order = [
+            'Levy', 'Manufacturer', 'Model', 'Prod. year', 'Category', 
+            'Leather interior', 'Fuel type', 'Engine volume', 'Mileage', 
+            'Cylinders', 'Gear box type', 'Drive wheels', 'Doors', 
+            'Wheel', 'Color', 'Airbags'
+        ]
+        df = df[required_order]
+
+        # 4.2 แปลงเป็น Numpy Array (ตัดชื่อหัวตารางทิ้ง เพื่อแก้ปัญหา Version Mismatch)
+        X_input = df.to_numpy()
+
+        print(f"✅ Data prepared for prediction (Shape: {X_input.shape})")
+
+        # 5. ทำนายผล
         if model:
-            prediction = model.predict(df)
+            # ส่ง X_input (ที่เป็นตัวเลขล้วน) เข้าไปแทน df
+            prediction = model.predict(X_input)
             result = float(prediction[0])
             print(f"✅ Prediction success: {result}")
             return {"price": result, "currency": "USD"}
@@ -173,5 +189,5 @@ def predict_price(item: CarItem):
 
     except Exception as e:
         print("🔴 PREDICTION ERROR FULL TRACEBACK:")
-        print(traceback.format_exc()) # ปริ้น Error ทั้งหมดออกมา
+        print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
