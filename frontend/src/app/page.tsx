@@ -210,7 +210,7 @@ export default function Home() {
 
       {price !== null && (
         <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', textAlign: 'center' }}>
-          <h3>💰 ราคาประเมิน: ${price.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+          <h3>💰 ราคาประเมินน: ${price.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
         </div>
       )}
     </div>
