@@ -6,7 +6,7 @@ import numpy as np
 import traceback 
 from fastapi.middleware.cors import CORSMiddleware
 import os
-from typing import Union  # สำคัญมาก! ต้อง import ตัวนี้
+from typing import Union 
 
 # ==========================================
 # 1. SETUP & LOAD RESOURCES
@@ -52,7 +52,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ ส่วนที่ 1: รับค่าได้ทั้งตัวเลขและข้อความ (กัน Error 422)
 class CarItem(BaseModel):
     Levy: Union[int, str]
     Manufacturer: str
@@ -82,43 +81,34 @@ def read_root():
 @app.post("/predict")
 def predict_price(item: CarItem):
     try:
-        # ====================================================
-        # 🧹 CLEANING DATA: แปลงข้อความให้เป็นตัวเลขที่สะอาด (แก้ Error 500)
-        # ====================================================
-        
-        # 1. จัดการ Levy (ถ้ามาเป็น "-" ให้เป็น 0)
+        # 1. Clean ข้อมูลเบื้องต้น (จัดการ String แปลกๆ)
+        clean_levy = 0
         try:
             val_levy = str(item.Levy).replace('-', '0')
             clean_levy = int(float(val_levy))
-        except:
-            clean_levy = 0
+        except: pass
 
-        # 2. จัดการ Doors (แปลง 04-May เป็นเลข)
-        def fix_doors(val):
-            val = str(val)
-            if 'May' in val or '4' in val: return 4
-            if 'Mar' in val or '2' in val: return 2
-            if '>' in val or '5' in val: return 5
-            return 4 
-        clean_doors = fix_doors(item.Doors)
+        clean_doors = 4
+        try:
+            val_doors = str(item.Doors)
+            if 'May' in val_doors or '4' in val_doors: clean_doors = 4
+            elif 'Mar' in val_doors or '2' in val_doors: clean_doors = 2
+            elif '>' in val_doors or '5' in val_doors: clean_doors = 5
+        except: pass
 
-        # 3. จัดการ Engine Volume (ลบคำว่า Turbo ออก)
+        clean_engine = 2.0
         try:
             val_eng = str(item.Engine_volume).lower().replace('turbo', '').strip()
             clean_engine = float(val_eng)
-        except:
-            clean_engine = 2.0 # ค่า Default ถ้าแปลงไม่ได้
+        except: pass
 
-        # 4. จัดการ Mileage (ลบคำว่า km ออก)
+        clean_mileage = 0
         try:
             val_mile = str(item.Mileage).lower().replace('km', '').replace(' ', '')
             clean_mileage = int(float(val_mile))
-        except:
-            clean_mileage = 0
+        except: pass
 
-        # ====================================================
-
-        # ✅ สร้าง DataFrame โดยใช้ค่าที่ Clean แล้ว (clean_xxx)
+        # 2. สร้าง DataFrame
         data = {
             'Levy': [clean_levy],
             'Manufacturer': [item.Manufacturer],
@@ -127,19 +117,31 @@ def predict_price(item: CarItem):
             'Category': [item.Category],
             'Leather interior': [item.Leather_interior],
             'Fuel type': [item.Fuel_type],
-            'Engine volume': [clean_engine], # ใช้ค่าที่สะอาดแล้ว
-            'Mileage': [clean_mileage],      # ใช้ค่าที่สะอาดแล้ว
+            'Engine volume': [clean_engine],
+            'Mileage': [clean_mileage],
             'Cylinders': [item.Cylinders],
             'Gear box type': [item.Gear_box_type],
             'Drive wheels': [item.Drive_wheels],
-            'Doors': [clean_doors],          # ใช้ค่าที่สะอาดแล้ว
+            'Doors': [clean_doors],
             'Wheel': [item.Wheel],
             'Color': [item.Color],
             'Airbags': [item.Airbags]
         }
         df = pd.DataFrame(data)
 
-        # 🛠️ แปลงหมวดหมู่ (Categorical)
+        # ==========================================================
+        # 🚨 NUCLEAR FIX: บังคับเปลี่ยนเป็นตัวเลข เดี๋ยวนี้! (Force Types)
+        # ==========================================================
+        # คำสั่งพวกนี้จะบังคับให้คอลัมน์พวกนี้เป็นตัวเลข ถ้าไม่ได้ให้เป็น 0
+        df['Engine volume'] = pd.to_numeric(df['Engine volume'], errors='coerce').fillna(2.0)
+        df['Mileage'] = pd.to_numeric(df['Mileage'], errors='coerce').fillna(0)
+        df['Levy'] = pd.to_numeric(df['Levy'], errors='coerce').fillna(0)
+        df['Prod. year'] = pd.to_numeric(df['Prod. year'], errors='coerce').fillna(2010)
+        df['Cylinders'] = pd.to_numeric(df['Cylinders'], errors='coerce').fillna(4)
+        df['Airbags'] = pd.to_numeric(df['Airbags'], errors='coerce').fillna(4)
+        df['Doors'] = pd.to_numeric(df['Doors'], errors='coerce').fillna(4)
+        
+        # 3. แปลงหมวดหมู่ (Categorical)
         categorical_cols = [
             'Manufacturer', 'Model', 'Category', 'Leather interior', 
             'Fuel type', 'Gear box type', 'Drive wheels', 
@@ -147,23 +149,29 @@ def predict_price(item: CarItem):
         ]
 
         for col in categorical_cols:
-            df[col] = df[col].astype(str)
+            df[col] = df[col].astype(str) # แปลงเป็น string ก่อน map
             if col in encoders:
                 le = encoders[col]
-                # ใช้เทคนิค map เพื่อป้องกัน Error เวลามีค่าใหม่ๆ ที่ไม่เคยเจอ
+                # Map ค่าที่ไม่รู้จักให้เป็นค่าแรก
                 df[col] = df[col].map(lambda s: s if s in le.classes_ else le.classes_[0])
                 df[col] = le.transform(df[col])
             else:
                 df[col] = 0
 
-        # 🚀 ทำนายผล
+        # ✅ DEBUG: ปริ้นประเภทข้อมูลออกมาดูเลยว่าใครยังดื้อเป็น Object อยู่ไหม
+        print("🔍 Checking Data Types before Predict:")
+        print(df.dtypes)
+        
+        # 4. ทำนายผล
         if model:
             prediction = model.predict(df)
-            return {"price": float(prediction[0]), "currency": "USD"}
+            result = float(prediction[0])
+            print(f"✅ Prediction success: {result}")
+            return {"price": result, "currency": "USD"}
         else:
-            return {"price": 0, "error": "Model not loaded properly"}
+            return {"price": 0, "error": "Model not loaded"}
 
     except Exception as e:
-        print("🔴 PREDICTION ERROR:")
-        print(traceback.format_exc())
+        print("🔴 PREDICTION ERROR FULL TRACEBACK:")
+        print(traceback.format_exc()) # ปริ้น Error ทั้งหมดออกมา
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
