@@ -6,6 +6,11 @@ frontend/.env.local
 frontend/build/
 frontend/dist/
 
+node_modules/
+.env
+.next/
+__pycache__/
+
 # --- Backend (Python) ---
 backend/venv/
 backend/env/
@@ -20,8 +25,15 @@ backend/.pytest_cache/
 # ถ้าไฟล์ model.pkl ไม่ใหญ่มาก (ไม่เกิน 100MB) เอาเครื่องหมาย # ข้างหน้าออกเพื่ออัปโหลดได้
 # *.pkl
 
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
 # --- System ---
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+/generated/prisma
