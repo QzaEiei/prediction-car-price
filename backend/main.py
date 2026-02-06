@@ -3,50 +3,47 @@ from pydantic import BaseModel
 import pandas as pd
 import joblib
 import numpy as np
+import traceback 
 from fastapi.middleware.cors import CORSMiddleware
+import os
+from typing import Union  # สำคัญมาก! ต้อง import ตัวนี้
 
 # ==========================================
 # 1. SETUP & LOAD RESOURCES
 # ==========================================
 print("Loading models and data...")
 
-# โหลดโมเดล AI และตัวแปลง
-model = joblib.load('car_price_xgb_tuned.pkl')
-encoders = joblib.load('car_price_encoders.pkl')
-
-# --- [ส่วนที่เพิ่มมา] โหลดข้อมูลดิบเพื่อทำ Dropdown List ---
-# เราต้องอ่าน CSV เพื่อดูว่า ยี่ห้อไหน (Key) มีรุ่นอะไรบ้าง (Value)
 try:
-    raw_df = pd.read_csv('car_price_data.csv')
-    
-    # Clean ข้อมูลเบื้องต้นเพื่อให้ได้รายชื่อรุ่นที่ถูกต้อง (เหมือนตอนเทรน)
-    raw_df['Levy'] = raw_df['Levy'].replace('-', '0')
-    # กรองราคาที่ผิดปกติออก เพื่อไม่ให้มีรุ่นรถแปลกๆ หลุดมา
-    raw_df['Price'] = pd.to_numeric(raw_df['Price'], errors='coerce')
-    raw_df = raw_df[(raw_df['Price'] > 500) & (raw_df['Price'] < 150000)]
-
-    # สร้าง Dictionary: { "TOYOTA": ["Prius", "Camry"], "HONDA": ["Civic", ...] }
-    # 1. Group ตามยี่ห้อ
-    # 2. หาชื่อรุ่นที่ไม่ซ้ำ (unique)
-    # 3. เรียงลำดับชื่อรุ่น (sorted)
-    car_options = (
-        raw_df.groupby('Manufacturer')['Model']
-        .unique()
-        .apply(lambda x: sorted(list(x))) 
-        .to_dict()
-    )
-    print("-> Car options loaded successfully.")
-
+    model = joblib.load('car_price_xgb_tuned.pkl')
+    encoders = joblib.load('car_price_encoders.pkl')
+    print("-> Model & Encoders loaded successfully.")
 except Exception as e:
-    print(f"Warning: Could not load car_price_data.csv for options. Error: {e}")
-    car_options = {}
+    print(f"🔴 Error loading model files: {e}")
+    model = None
+    encoders = {}
+
+car_options = {}
+try:
+    csv_path = 'car_price_data.csv'
+    if os.path.exists(csv_path):
+        raw_df = pd.read_csv(csv_path)
+        raw_df['Levy'] = raw_df['Levy'].replace('-', '0')
+        raw_df['Price'] = pd.to_numeric(raw_df['Price'], errors='coerce')
+        raw_df = raw_df[(raw_df['Price'] > 500) & (raw_df['Price'] < 150000)]
+        car_options = (
+            raw_df.groupby('Manufacturer')['Model']
+            .unique()
+            .apply(lambda x: sorted(list(x))) 
+            .to_dict()
+        )
+except Exception as e:
+    pass
 
 # ==========================================
 # 2. API CONFIGURATION
 # ==========================================
 app = FastAPI()
 
-# เปิด CORS ให้ Next.js (port 3000) ยิงเข้ามาได้
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -55,83 +52,118 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# กำหนดหน้าตาข้อมูลที่จะรับ (Pydantic Model)
+# ✅ ส่วนที่ 1: รับค่าได้ทั้งตัวเลขและข้อความ (กัน Error 422)
 class CarItem(BaseModel):
-    Levy: int
+    Levy: Union[int, str]
     Manufacturer: str
     Model: str
     Prod_year: int
     Category: str
     Leather_interior: str
     Fuel_type: str
-    Engine_volume: float
-    Mileage: int
+    Engine_volume: Union[float, str]
+    Mileage: Union[int, str]
     Cylinders: int
     Gear_box_type: str
     Drive_wheels: str
-    Doors: int
+    Doors: Union[int, str]
     Wheel: str
     Color: str
     Airbags: int
 
-# ==========================================
-# 3. ENDPOINTS
-# ==========================================
-
-# --- API ใหม่: ส่งรายชื่อ ยี่ห้อ และ รุ่นรถ ไปให้ Frontend ---
 @app.get("/car_options")
 def get_car_options():
-    if not car_options:
-        raise HTTPException(status_code=500, detail="Car options data not loaded.")
-    return car_options
+    return car_options or {}
 
-# --- API เดิม: รับค่ามาทำนายราคา ---
+@app.get("/")
+def read_root():
+    return {"status": "Server is running correctly!"}
+
 @app.post("/predict")
 def predict_price(item: CarItem):
     try:
-        # 1. แปลงข้อมูลจาก JSON ให้เป็น DataFrame
+        # ====================================================
+        # 🧹 CLEANING DATA: แปลงข้อความให้เป็นตัวเลขที่สะอาด (แก้ Error 500)
+        # ====================================================
+        
+        # 1. จัดการ Levy (ถ้ามาเป็น "-" ให้เป็น 0)
+        try:
+            val_levy = str(item.Levy).replace('-', '0')
+            clean_levy = int(float(val_levy))
+        except:
+            clean_levy = 0
+
+        # 2. จัดการ Doors (แปลง 04-May เป็นเลข)
+        def fix_doors(val):
+            val = str(val)
+            if 'May' in val or '4' in val: return 4
+            if 'Mar' in val or '2' in val: return 2
+            if '>' in val or '5' in val: return 5
+            return 4 
+        clean_doors = fix_doors(item.Doors)
+
+        # 3. จัดการ Engine Volume (ลบคำว่า Turbo ออก)
+        try:
+            val_eng = str(item.Engine_volume).lower().replace('turbo', '').strip()
+            clean_engine = float(val_eng)
+        except:
+            clean_engine = 2.0 # ค่า Default ถ้าแปลงไม่ได้
+
+        # 4. จัดการ Mileage (ลบคำว่า km ออก)
+        try:
+            val_mile = str(item.Mileage).lower().replace('km', '').replace(' ', '')
+            clean_mileage = int(float(val_mile))
+        except:
+            clean_mileage = 0
+
+        # ====================================================
+
+        # ✅ สร้าง DataFrame โดยใช้ค่าที่ Clean แล้ว (clean_xxx)
         data = {
-            'Levy': [item.Levy],
+            'Levy': [clean_levy],
             'Manufacturer': [item.Manufacturer],
             'Model': [item.Model],
-            'Prod. year': [item.Prod_year], # Map ชื่อให้ตรงกับโมเดล
+            'Prod. year': [item.Prod_year], 
             'Category': [item.Category],
             'Leather interior': [item.Leather_interior],
             'Fuel type': [item.Fuel_type],
-            'Engine volume': [item.Engine_volume],
-            'Mileage': [item.Mileage],
+            'Engine volume': [clean_engine], # ใช้ค่าที่สะอาดแล้ว
+            'Mileage': [clean_mileage],      # ใช้ค่าที่สะอาดแล้ว
             'Cylinders': [item.Cylinders],
             'Gear box type': [item.Gear_box_type],
             'Drive wheels': [item.Drive_wheels],
-            'Doors': [item.Doors],
+            'Doors': [clean_doors],          # ใช้ค่าที่สะอาดแล้ว
             'Wheel': [item.Wheel],
             'Color': [item.Color],
             'Airbags': [item.Airbags]
         }
         df = pd.DataFrame(data)
 
-        # 2. แปลงตัวหนังสือเป็นตัวเลข (Encoding) ด้วย encoders ที่โหลดมา
-        categorical_cols = ['Manufacturer', 'Model', 'Category', 'Leather interior', 
-                            'Fuel type', 'Gear box type', 'Drive wheels', 
-                            'Wheel', 'Color']
+        # 🛠️ แปลงหมวดหมู่ (Categorical)
+        categorical_cols = [
+            'Manufacturer', 'Model', 'Category', 'Leather interior', 
+            'Fuel type', 'Gear box type', 'Drive wheels', 
+            'Wheel', 'Color'
+        ]
 
         for col in categorical_cols:
-            le = encoders.get(col)
-            try:
-                # แปลงค่าปกติ
+            df[col] = df[col].astype(str)
+            if col in encoders:
+                le = encoders[col]
+                # ใช้เทคนิค map เพื่อป้องกัน Error เวลามีค่าใหม่ๆ ที่ไม่เคยเจอ
+                df[col] = df[col].map(lambda s: s if s in le.classes_ else le.classes_[0])
                 df[col] = le.transform(df[col])
-            except:
-                # กรณีเจอค่าแปลกๆ (Unseen Label) ให้ใช้ค่าแรกสุดในลิสต์แทน เพื่อกัน Error
-                # (หรือคุณจะเลือกใส่ค่า -1 ก็ได้ ถ้าโมเดลรองรับ)
-                df[col] = le.transform([le.classes_[0]])
+            else:
+                df[col] = 0
 
-        # 3. ทำนายราคา
-        prediction = model.predict(df)
-        predicted_price = float(prediction[0])
-
-        return {"price": predicted_price, "currency": "USD"}
+        # 🚀 ทำนายผล
+        if model:
+            prediction = model.predict(df)
+            return {"price": float(prediction[0]), "currency": "USD"}
+        else:
+            return {"price": 0, "error": "Model not loaded properly"}
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-# วิธีรัน (ใน Terminal): uvicorn main:app --reload
+        print("🔴 PREDICTION ERROR:")
+        print(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
