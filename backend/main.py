@@ -3,7 +3,7 @@ from pydantic import BaseModel
 import pandas as pd
 import joblib
 import numpy as np
-import traceback # เพิ่มตัวนี้เพื่อช่วยดู Error
+import traceback 
 from fastapi.middleware.cors import CORSMiddleware
 import os
 
@@ -12,31 +12,27 @@ import os
 # ==========================================
 print("Loading models and data...")
 
-# โหลดโมเดล AI และตัวแปลง
-# (ใช้ try-except กันไว้เผื่อหาไฟล์ไม่เจอ จะได้รู้เรื่อง)
 try:
+    # โหลดโมเดลใหม่และตัวแปลง
     model = joblib.load('car_price_xgb_tuned.pkl')
     encoders = joblib.load('car_price_encoders.pkl')
-    print("-> Model loaded successfully.")
+    print("-> Model & Encoders loaded successfully.")
 except Exception as e:
     print(f"🔴 Error loading model files: {e}")
+    model = None
+    encoders = {}
 
-# --- โหลดข้อมูลดิบเพื่อทำ Dropdown List ---
+# โหลดข้อมูล Dropdown
 car_options = {}
 try:
-    # เช็กว่ามีไฟล์อยู่จริงไหม
     csv_path = 'car_price_data.csv'
-    if not os.path.exists(csv_path):
-        print(f"⚠️ Warning: {csv_path} not found in current directory.")
-    else:
+    if os.path.exists(csv_path):
         raw_df = pd.read_csv(csv_path)
-        
         # Clean ข้อมูลเบื้องต้น
         raw_df['Levy'] = raw_df['Levy'].replace('-', '0')
         raw_df['Price'] = pd.to_numeric(raw_df['Price'], errors='coerce')
         raw_df = raw_df[(raw_df['Price'] > 500) & (raw_df['Price'] < 150000)]
 
-        # สร้าง Dictionary Dropdown
         car_options = (
             raw_df.groupby('Manufacturer')['Model']
             .unique()
@@ -44,9 +40,8 @@ try:
             .to_dict()
         )
         print("-> Car options loaded successfully.")
-
 except Exception as e:
-    print(f"Warning: Could not load car_price_data.csv for options. Error: {e}")
+    print(f"Warning options: {e}")
 
 # ==========================================
 # 2. API CONFIGURATION
@@ -74,7 +69,7 @@ class CarItem(BaseModel):
     Cylinders: int
     Gear_box_type: str
     Drive_wheels: str
-    Doors: int  # รับมาเป็นตัวเลข (2 หรือ 4)
+    Doors: str  # ⚠️ รับเป็น String เผื่อ Frontend ส่ง "04-May" มา
     Wheel: str
     Color: str
     Airbags: int
@@ -85,10 +80,7 @@ class CarItem(BaseModel):
 
 @app.get("/car_options")
 def get_car_options():
-    if not car_options:
-        # ส่งค่าว่างไปก่อน ดีกว่า Error 500
-        return {} 
-    return car_options
+    return car_options or {}
 
 @app.get("/")
 def read_root():
@@ -97,24 +89,21 @@ def read_root():
 @app.post("/predict")
 def predict_price(item: CarItem):
     try:
-        # ---------------------------------------------------------
-        # 🛠️ ส่วนที่เพิ่มใหม่: แก้บั๊ก Doors (Excel Auto-format Bug)
-        # ---------------------------------------------------------
-        # แปลงตัวเลขที่รับมาจากหน้าเว็บ ให้เป็น String ประหลาดๆ ตามที่ Model เคยจำไว้
-        doors_fixed = "04-May" # ค่า Default กันเหนียว
+        # -------------------------------------------------------
+        # 🛠️ STEP 1: จัดการ DOORS ให้เป็นตัวเลข (Logic ใหม่)
+        # -------------------------------------------------------
+        # ฟังก์ชันนี้จะแปลงทุกอย่างให้เป็นเลข 2, 4, หรือ 5 เท่านั้น
+        def fix_doors(val):
+            val = str(val)
+            if 'May' in val or '4' in val: return 4
+            if 'Mar' in val or '2' in val: return 2
+            if '>' in val or '5' in val: return 5
+            return 4 # ค่า Default
         
-        if item.Doors == 4:
-            doors_fixed = "04-May"
-        elif item.Doors == 2:
-            doors_fixed = "02-Mar"
-        elif item.Doors > 5:
-            doors_fixed = ">5"
-        else:
-            # กรณีอื่นๆ พยายามแปลงให้ใกล้เคียงที่สุด
-            doors_fixed = "04-May"
-        # ---------------------------------------------------------
+        cleaned_doors = fix_doors(item.Doors)
+        # -------------------------------------------------------
 
-        # 1. แปลงข้อมูลจาก JSON ให้เป็น DataFrame
+        # 1. สร้าง DataFrame
         data = {
             'Levy': [item.Levy],
             'Manufacturer': [item.Manufacturer],
@@ -128,49 +117,43 @@ def predict_price(item: CarItem):
             'Cylinders': [item.Cylinders],
             'Gear box type': [item.Gear_box_type],
             'Drive wheels': [item.Drive_wheels],
-            'Doors': [doors_fixed],  # ✅ ใช้ค่าที่แก้แล้วส่งให้ Model
+            'Doors': [cleaned_doors],  # ✅ ส่งเลข 4, 2, 5 ไปเลย
             'Wheel': [item.Wheel],
             'Color': [item.Color],
             'Airbags': [item.Airbags]
         }
         df = pd.DataFrame(data)
 
-        # 2. แปลงตัวหนังสือเป็นตัวเลข (Encoding)
-        categorical_cols = ['Manufacturer', 'Model', 'Category', 'Leather interior', 
-                            'Fuel type', 'Gear box type', 'Drive wheels', 
-                            'Wheel', 'Color']
-        
-        # เพิ่ม Doors เข้าไปใน List การแปลงด้วย (ถ้า Encoder มีข้อมูลนี้อยู่)
-        # แต่ถ้าใน categorical_cols เดิมไม่มี Doors ก็ไม่ต้องใส่เพิ่ม 
-        # (XGBoost บางทีรับค่าแปลกๆ นี้ได้เลยถ้าเทรนมาแบบนั้น)
+        # 2. แปลงหมวดหมู่ (Categorical)
+        # ⚠️ สังเกตว่า: ไม่มี 'Doors' ในลิสต์นี้แล้ว! (เพราะมันเป็นตัวเลขแล้ว)
+        categorical_cols = [
+            'Manufacturer', 'Model', 'Category', 'Leather interior', 
+            'Fuel type', 'Gear box type', 'Drive wheels', 
+            'Wheel', 'Color'
+        ]
 
         for col in categorical_cols:
-                    # เช็กว่ามีตัวแปลงสำหรับคอลัมน์นี้ไหม
-                    if col in encoders:
-                        le = encoders.get(col)
-                        try:
-                            df[col] = le.transform(df[col])
-                        except Exception as encoding_err:
-                            # ถ้าแปลงไม่ได้ (เช่นเจอค่าแปลกๆ) ให้ใส่ 0 ไปก่อน กันโปรแกรมพัง
-                            print(f"⚠️ Encoding failed for {col}: {encoding_err}")
-                            df[col] = 0 
-                    else:
-                        # 🚨 ถ้าหาตัวแปลงไม่เจอ (เช่น Doors หายไป)
-                        print(f"⚠️ Warning: No encoder found for '{col}'. Setting to 0.")
-                        # ถ้าเป็นตัวเลขอยู่แล้ว ก็ปล่อยผ่าน ถ้าเป็นตัวหนังสือ ให้แก้เป็น 0
-                        try:
-                            df[col] = pd.to_numeric(df[col])
-                        except:
-                            df[col] = 0
+            # แปลงเป็น String กันเหนียว
+            df[col] = df[col].astype(str)
+            
+            if col in encoders:
+                le = encoders[col]
+                # เทคนิคจัดการ Unseen Labels (ถ้าไม่เจอ ให้ใช้ค่าแรกสุดของโมเดล)
+                # วิธีนี้ป้องกัน Error: "y contains previously unseen labels"
+                df[col] = df[col].map(lambda s: s if s in le.classes_ else le.classes_[0])
+                df[col] = le.transform(df[col])
+            else:
+                # ถ้าไม่มี Encoder ให้ใส่ 0
+                df[col] = 0
 
-        # 3. ทำนายราคา
-        prediction = model.predict(df)
-        predicted_price = float(prediction[0])
-
-        return {"price": predicted_price, "currency": "USD"}
+        # 3. ทำนายผล
+        if model:
+            prediction = model.predict(df)
+            return {"price": float(prediction[0]), "currency": "USD"}
+        else:
+            return {"price": 0, "error": "Model not loaded properly"}
 
     except Exception as e:
-        # ปริ้น Error ยาวๆ ลง Log ของ Render จะได้รู้ว่าพังตรงไหน
-        print("🔴🔴 PREDICTION ERROR 🔴🔴")
+        print("🔴 PREDICTION ERROR:")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
