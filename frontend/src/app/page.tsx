@@ -65,7 +65,7 @@ export default function Home() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const res = await axios.get<CarOptions>('http://127.0.0.1:8000/car_options');
+        const res = await axios.get<CarOptions>('https://car-price-api-szgc.onrender.com/car_options');
         setCarOptions(res.data);
         setLoadingOptions(false);
       } catch (error) {
@@ -100,7 +100,7 @@ export default function Home() {
     setPrice(null);
 
     try {
-      const response = await axios.post<PredictionResponse>('http://127.0.0.1:8000/predict', formData);
+      const response = await axios.post<PredictionResponse>('https://car-price-api-szgc.onrender.com/predict', formData);
       setPrice(response.data.price);
     } catch (error) {
       alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
