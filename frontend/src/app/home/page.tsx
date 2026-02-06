@@ -258,7 +258,7 @@ export default function ValuCarPage() {
                 <h2 className="text-xl font-extrabold tracking-tight text-slate-900">ValuCar</h2>
               </div>
               <p className="text-slate-500 text-sm leading-relaxed">
-                แพลตฟอร์มประเมินราคารถยนต์ AI ที่ได้รับความไว้วางใจสูงสุด ช่วยให้คุณตัดสินใจซื้อขายได้อย่างมั่นใจ
+                แพลตฟอร์มประเมินราคารถยนต์ AII ที่ได้รับความไว้วางใจสูงสุด ช่วยให้คุณตัดสินใจซื้อขายได้อย่างมั่นใจ
               </p>
             </div>
             
