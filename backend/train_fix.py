@@ -9,7 +9,7 @@ from sklearn.metrics import r2_score
 print("🚀 Starting Model Retraining...")
 
 # 1. โหลดข้อมูล
-df = pd.read_csv('car_price_data.csv')
+df = pd.read_csv('backend/car_price_data.csv')
 
 # 2. Clean ข้อมูล (ให้เหมือน main.py)
 df['Levy'] = df['Levy'].replace('-', '0')

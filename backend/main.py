@@ -145,13 +145,23 @@ def predict_price(item: CarItem):
         # (XGBoost บางทีรับค่าแปลกๆ นี้ได้เลยถ้าเทรนมาแบบนั้น)
 
         for col in categorical_cols:
-            if col in encoders: # เช็กก่อนว่ามีตัวแปลงไหม
-                le = encoders.get(col)
-                try:
-                    df[col] = le.transform(df[col])
-                except:
-                    # ถ้าเจอค่าที่ไม่รู้จัก ให้ใช้ค่าแรกสุด (Mode)
-                    df[col] = le.transform([le.classes_[0]])
+                    # เช็กว่ามีตัวแปลงสำหรับคอลัมน์นี้ไหม
+                    if col in encoders:
+                        le = encoders.get(col)
+                        try:
+                            df[col] = le.transform(df[col])
+                        except Exception as encoding_err:
+                            # ถ้าแปลงไม่ได้ (เช่นเจอค่าแปลกๆ) ให้ใส่ 0 ไปก่อน กันโปรแกรมพัง
+                            print(f"⚠️ Encoding failed for {col}: {encoding_err}")
+                            df[col] = 0 
+                    else:
+                        # 🚨 ถ้าหาตัวแปลงไม่เจอ (เช่น Doors หายไป)
+                        print(f"⚠️ Warning: No encoder found for '{col}'. Setting to 0.")
+                        # ถ้าเป็นตัวเลขอยู่แล้ว ก็ปล่อยผ่าน ถ้าเป็นตัวหนังสือ ให้แก้เป็น 0
+                        try:
+                            df[col] = pd.to_numeric(df[col])
+                        except:
+                            df[col] = 0
 
         # 3. ทำนายราคา
         prediction = model.predict(df)
