@@ -1,89 +1,91 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
-import joblib
 import pandas as pd
-import sklearn
-from sklearn import set_config
+import joblib
+import numpy as np
+from fastapi.middleware.cors import CORSMiddleware
 
-# 1. ตั้งค่า Global ไว้ก่อน (กันเหนียว)
-set_config(transform_output="pandas")
+# 1. โหลดโมเดลและตัวแปลงภาษา
+print("Loading models...")
+model = joblib.load('car_price_xgb_tuned.pkl')
+encoders = joblib.load('car_price_encoders.pkl')
 
 app = FastAPI()
 
-# 2. โหลดโมเดล
-try:
-    model = joblib.load('My_Best_XGBoost_Tuned.pkl')
-    print("✅ Model loaded successfully")
-except Exception as e:
-    print(f"❌ Error loading model: {e}")
-    model = None
-
-# ======================================================
-# 🔧 จุดแก้บั๊ก (ไม้ตาย): บังคับทุกชิ้นส่วนใน Pipeline ให้ส่งชื่อคอลัมน์
-# ======================================================
-if model is not None:
-    try:
-        # เช็คว่าเป็น Pipeline หรือไม่
-        if hasattr(model, 'named_steps'):
-            print("🔧 Pipeline detected! Patching steps...")
-            # วนลูปเข้าไปสั่งทุกขั้นตอนย่อย
-            for name, step in model.named_steps.items():
-                if hasattr(step, 'set_output'):
-                    step.set_output(transform="pandas")
-                    print(f"   ✅ Fixed step: '{name}' -> output pandas")
-        else:
-            # ถ้าไม่ใช่ Pipeline (เป็น model เพียวๆ) สั่งตรงๆ
-            if hasattr(model, 'set_output'):
-                model.set_output(transform="pandas")
-                print("   ✅ Fixed single model -> output pandas")
-                
-    except Exception as e:
-        print(f"⚠️ Warning: Could not patch model steps: {e}")
-
-# ======================================================
-
+# เปิด CORS ให้ Next.js (port 3000) ยิงเข้ามาได้
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # หรือระบุ ["http://localhost:3000"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# 2. กำหนดหน้าตาข้อมูลที่จะรับ (ต้องตรงกับตอนเทรน)
 class CarItem(BaseModel):
-    Present_Price: float
-    Car_Age: int
-    Kms_Driven: int
-    Fuel_Type: int
-    Transmission: int
+    Levy: int
+    Manufacturer: str
+    Model: str
+    Prod_year: int  # ใน pandas ชื่อ 'Prod. year' แต่ใน code ใช้ _ แทนเดี๋ยวไปแก้
+    Category: str
+    Leather_interior: str
+    Fuel_type: str
+    Engine_volume: float
+    Mileage: int
+    Cylinders: int
+    Gear_box_type: str
+    Drive_wheels: str
+    Doors: int
+    Wheel: str
+    Color: str
+    Airbags: int
 
 @app.post("/predict")
 def predict_price(item: CarItem):
-    if model is None:
-        return {"error": "Model failed to load on server start."}
-
     try:
-        # เตรียมข้อมูล
-        # ⚠️ ลำดับสำคัญมาก! ต้องเรียงให้ตรงกับตอน Train เป๊ะๆ
-        data_input = {
-            'Present_Price': [float(item.Present_Price)],
-            'Kms_Driven': [int(item.Kms_Driven)],
-            'Fuel_Type': [int(item.Fuel_Type)],
-            'Transmission': [int(item.Transmission)],
-            'Car_Age': [int(item.Car_Age)]
+        # 3. แปลงข้อมูลจาก JSON ให้เป็น DataFrame
+        data = {
+            'Levy': [item.Levy],
+            'Manufacturer': [item.Manufacturer],
+            'Model': [item.Model],
+            'Prod. year': [item.Prod_year], # แก้ชื่อให้ตรงกับตอนเทรน
+            'Category': [item.Category],
+            'Leather interior': [item.Leather_interior],
+            'Fuel type': [item.Fuel_type],
+            'Engine volume': [item.Engine_volume],
+            'Mileage': [item.Mileage],
+            'Cylinders': [item.Cylinders],
+            'Gear box type': [item.Gear_box_type],
+            'Drive wheels': [item.Drive_wheels],
+            'Doors': [item.Doors],
+            'Wheel': [item.Wheel],
+            'Color': [item.Color],
+            'Airbags': [item.Airbags]
         }
-        
-        df = pd.DataFrame(data_input)
-        
-        # 👇👇 จุดแก้สำคัญ (The Fix) 👇👇
-        # เพิ่ม validate_features=False เพื่อสั่งให้ XGBoost ไม่ต้องเช็คชื่อคอลัมน์
-        # (เพราะเวอร์ชั่นต่างกัน มันเลยเช็คผิดพลาด เราเลยต้องปิดมัน)
-        prediction = model.predict(df, validate_features=False)
-        
-        return {"predicted_price": float(prediction[0])}
-        
+        df = pd.DataFrame(data)
+
+        # 4. แปลงตัวหนังสือเป็นตัวเลข (Encoding)
+        categorical_cols = ['Manufacturer', 'Model', 'Category', 'Leather interior', 
+                            'Fuel type', 'Gear box type', 'Drive wheels', 
+                            'Wheel', 'Color']
+
+        for col in categorical_cols:
+            le = encoders.get(col)
+            # กรณีเจอรุ่นรถแปลกๆ ที่ไม่เคยเทรน (Handle Unseen Labels)
+            # เราจะพยายามแปลง ถ้าไม่ได้จะใส่ค่า -1 หรือค่าที่เจอบ่อยสุดแทน
+            try:
+                df[col] = le.transform(df[col])
+            except:
+                # ถ้าไม่เจอค่านี้ในตอนเทรน ให้ใช้ค่าแรกสุดในตัวแปลง (กัน Error)
+                df[col] = le.transform([le.classes_[0]])
+
+        # 5. ทำนายราคา
+        prediction = model.predict(df)
+        predicted_price = float(prediction[0])
+
+        return {"price": predicted_price, "currency": "USD"}
+
     except Exception as e:
-        import traceback
-        print(f"❌ Error: {traceback.format_exc()}")
-        return {"error": str(e), "detail": "Check server logs"}
+        raise HTTPException(status_code=500, detail=str(e))
+
+# วิธีรัน: uvicorn main:app --reload
