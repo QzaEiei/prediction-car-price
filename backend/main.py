@@ -6,6 +6,7 @@ import numpy as np
 import traceback 
 from fastapi.middleware.cors import CORSMiddleware
 import os
+from typing import Union
 
 # ==========================================
 # 1. SETUP & LOAD RESOURCES
@@ -57,19 +58,19 @@ app.add_middleware(
 )
 
 class CarItem(BaseModel):
-    Levy: int
+    Levy: Union[int, str]         # กันเหนียวเผื่อส่ง "-" มา
     Manufacturer: str
     Model: str
     Prod_year: int
     Category: str
     Leather_interior: str
     Fuel_type: str
-    Engine_volume: float
-    Mileage: int
+    Engine_volume: Union[float, str] # กันเหนียวเผื่อส่ง "1.8 Turbo" มา
+    Mileage: Union[int, str]         # กันเหนียวเผื่อส่ง "20000 km" มา
     Cylinders: int
     Gear_box_type: str
     Drive_wheels: str
-    Doors: str  # ⚠️ รับเป็น String เผื่อ Frontend ส่ง "04-May" มา
+    Doors: Union[int, str]           # ✅ รับได้หมดทั้ง 4, "4", "04-May"
     Wheel: str
     Color: str
     Airbags: int
@@ -89,20 +90,39 @@ def read_root():
 @app.post("/predict")
 def predict_price(item: CarItem):
     try:
-        # -------------------------------------------------------
-        # 🛠️ STEP 1: จัดการ DOORS ให้เป็นตัวเลข (Logic ใหม่)
-        # -------------------------------------------------------
-        # ฟังก์ชันนี้จะแปลงทุกอย่างให้เป็นเลข 2, 4, หรือ 5 เท่านั้น
+        # ====================================================
+        # 🧹 CLEANING DATA รอบสุดท้ายก่อนเข้า DataFrame
+        # ====================================================
+        
+        # 1. จัดการ Levy (ถ้ามาเป็น "-" ให้เป็น 0)
+        try:
+            val_levy = str(item.Levy).replace('-', '0')
+            clean_levy = int(float(val_levy))
+        except:
+            clean_levy = 0
+
+        # 2. จัดการ Doors (พระเอกของเรา)
         def fix_doors(val):
             val = str(val)
             if 'May' in val or '4' in val: return 4
             if 'Mar' in val or '2' in val: return 2
             if '>' in val or '5' in val: return 5
-            return 4 # ค่า Default
-        
-        cleaned_doors = fix_doors(item.Doors)
-        # -------------------------------------------------------
+            return 4 
+        clean_doors = fix_doors(item.Doors)
 
+        # 3. จัดการ Engine Volume (เผื่อมี Turbo)
+        try:
+            val_eng = str(item.Engine_volume).replace('Turbo', '').strip()
+            clean_engine = float(val_eng)
+        except:
+            clean_engine = 2.0 # Default
+
+        # 4. จัดการ Mileage (เผื่อมี km)
+        try:
+            val_mile = str(item.Mileage).replace('km', '').replace(' ', '')
+            clean_mileage = int(float(val_mile))
+        except:
+            clean_mileage = 0
         # 1. สร้าง DataFrame
         data = {
             'Levy': [item.Levy],
@@ -126,34 +146,25 @@ def predict_price(item: CarItem):
 
         # 2. แปลงหมวดหมู่ (Categorical)
         # ⚠️ สังเกตว่า: ไม่มี 'Doors' ในลิสต์นี้แล้ว! (เพราะมันเป็นตัวเลขแล้ว)
-        categorical_cols = [
-            'Manufacturer', 'Model', 'Category', 'Leather interior', 
-            'Fuel type', 'Gear box type', 'Drive wheels', 
-            'Wheel', 'Color'
-        ]
-
+        categorical_cols = ['Manufacturer', 'Model', 'Category', 'Leather interior', 
+                            'Fuel type', 'Gear box type', 'Drive wheels', 
+                            'Wheel', 'Color']
         for col in categorical_cols:
-            # แปลงเป็น String กันเหนียว
             df[col] = df[col].astype(str)
-            
             if col in encoders:
                 le = encoders[col]
-                # เทคนิคจัดการ Unseen Labels (ถ้าไม่เจอ ให้ใช้ค่าแรกสุดของโมเดล)
-                # วิธีนี้ป้องกัน Error: "y contains previously unseen labels"
                 df[col] = df[col].map(lambda s: s if s in le.classes_ else le.classes_[0])
                 df[col] = le.transform(df[col])
             else:
-                # ถ้าไม่มี Encoder ให้ใส่ 0
                 df[col] = 0
 
-        # 3. ทำนายผล
         if model:
             prediction = model.predict(df)
             return {"price": float(prediction[0]), "currency": "USD"}
         else:
-            return {"price": 0, "error": "Model not loaded properly"}
+            return {"price": 0, "error": "Model not loaded"}
 
     except Exception as e:
-        print("🔴 PREDICTION ERROR:")
+        print("🔴 ERROR:")
         print(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
