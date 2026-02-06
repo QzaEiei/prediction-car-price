@@ -137,7 +137,7 @@ def predict_price(item: CarItem):
             'Cylinders': [item.Cylinders],
             'Gear box type': [item.Gear_box_type],
             'Drive wheels': [item.Drive_wheels],
-            'Doors': [cleaned_doors],  # ✅ ส่งเลข 4, 2, 5 ไปเลย
+            'Doors': [clean_doors],  # ✅ ส่งเลข 4, 2, 5 ไปเลย
             'Wheel': [item.Wheel],
             'Color': [item.Color],
             'Airbags': [item.Airbags]
