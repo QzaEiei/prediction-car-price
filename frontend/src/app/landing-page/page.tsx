@@ -33,7 +33,7 @@ export default function LandingPage() {
 
       <main className="flex-1">
         {/* --- HERO / HOW IT WORKS --- */}
-        <section className="py-20 px-6 bg-white" id="how-it-works">
+        <section  className="py-20 px-6 bg-white" id="how-it-works">
           <div className="mx-auto max-w-[1280px]">
             <div className="text-center mb-16">
               <span className="inline-block px-3 py-1 rounded-full bg-[#137fec]/10 text-[#137fec] text-xs font-bold uppercase tracking-wider mb-4">ขั้นตอนง่ายๆ</span>
