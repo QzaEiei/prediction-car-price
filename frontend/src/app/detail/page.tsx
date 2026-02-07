@@ -59,7 +59,7 @@ const CarValuationFormContent: React.FC = () => {
       Model: step1Data.model,
       Prod_year: parseInt(step1Data.prodYear),
       Category: "Sedan",       // Default Value
-      Leather_interior: leather,
+      Leather_interior: "Yes",
       Fuel_type: fuelType,
       Engine_volume: 2.0,      // Default Value
       Mileage: typeof mileage === 'number' ? mileage : 0,
@@ -245,17 +245,32 @@ const CarValuationFormContent: React.FC = () => {
             </div>
 
              {/* --- 5. เบาะหนัง (API ต้องการ) --- */}
-             <div className="flex flex-col gap-3">
-              <label className="text-base font-semibold">เบาะหนัง</label>
-              <select 
-                value={leather}
-                onChange={(e) => setLeather(e.target.value)}
-                className="form-select w-full h-12 rounded-lg border border-slate-200 focus:ring-blue-600 focus:border-blue-600 px-3 bg-white outline-none cursor-pointer"
-              >
-                <option value="Yes">มีเบาะหนัง (Yes)</option>
-                <option value="No">ไม่มี (No)</option>
-              </select>
+            <div className="mb-12">
+            <p className="text-base font-semibold mb-4">ประวัติการเข้าศูนย์</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <label className="cursor-pointer group">
+                <input defaultChecked className="hidden peer" name="service_history" type="radio" />
+                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
+                  <span className="material-symbols-outlined text-primary">history_edu</span>
+                  <span className="text-sm font-medium">เข้าศูนย์ตลอด</span>
+                </div>
+              </label>
+              <label className="cursor-pointer group">
+                <input className="hidden peer" name="service_history" type="radio" />
+                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
+                  <span className="material-symbols-outlined text-slate-400">pending_actions</span>
+                  <span className="text-sm font-medium">เข้าศูนย์บ้าง</span>
+                </div>
+              </label>
+              <label className="cursor-pointer group">
+                <input className="hidden peer" name="service_history" type="radio" />
+                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
+                  <span className="material-symbols-outlined text-slate-400">block</span>
+                  <span className="text-sm font-medium">ไม่มีประวัติศูนย์</span>
+                </div>
+              </label>
             </div>
+          </div>
           </div>
 
           {/* --- เพิ่มเติม: ส่วนที่ไม่ได้ใช้คำนวณแต่มีไว้ให้ UI ครบ --- */}
