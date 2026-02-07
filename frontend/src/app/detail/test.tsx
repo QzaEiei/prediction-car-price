@@ -17,7 +17,7 @@ const CarValuationFormContent: React.FC = () => {
     model: searchParams.get('model') || 'Camry',
     prodYear: searchParams.get('year') || '2015',
   };
-   const [condition, setCondition] = useState('Good'); 
+
   // --- 2. STATE SETTINGS ---
   const [mileage, setMileage] = useState<number | ''>(45000);
   const [selectedColor, setSelectedColor] = useState('Silver');
@@ -34,13 +34,6 @@ const CarValuationFormContent: React.FC = () => {
   const maxMileage = 300000;
   const currentMileage = mileage === '' ? 0 : mileage;
   const mileagePercent = Math.min((currentMileage / maxMileage) * 100, 100);
-
-    const conditionMultipliers: Record<string, number> = {
-    'Excellent': 1.05, // +5%
-    'Good': 1.00,      // ราคาปกติ
-    'Fair': 0.90,      // -10%
-    'Poor': 0.80       // -20%
-  };
 
   const handleMileageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -250,94 +243,31 @@ const CarValuationFormContent: React.FC = () => {
                 <option value="CNG">CNG</option>
               </select>
             </div>
-            </div>
-             {/* --- ประวัติ --- */}
-          <div className="mb-12">
-            <p className="text-base font-semibold mb-4">ประวัติการเข้าศูนย์</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <label className="cursor-pointer group">
-                <input defaultChecked className="hidden peer" name="service_history" type="radio" />
-                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
-                  <span className="material-symbols-outlined text-primary">history_edu</span>
-                  <span className="text-sm font-medium">เข้าศูนย์ตลอด</span>
-                </div>
-              </label>
-              <label className="cursor-pointer group">
-                <input className="hidden peer" name="service_history" type="radio" />
-                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
-                  <span className="material-symbols-outlined text-slate-400">pending_actions</span>
-                  <span className="text-sm font-medium">เข้าศูนย์บ้าง</span>
-                </div>
-              </label>
-              <label className="cursor-pointer group">
-                <input className="hidden peer" name="service_history" type="radio" />
-                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
-                  <span className="material-symbols-outlined text-slate-400">block</span>
-                  <span className="text-sm font-medium">ไม่มีประวัติศูนย์</span>
-                </div>
-              </label>
+
+             {/* --- 5. เบาะหนัง (API ต้องการ) --- */}
+             <div className="flex flex-col gap-3">
+              <label className="text-base font-semibold">เบาะหนัง</label>
+              <select 
+                value={leather}
+                onChange={(e) => setLeather(e.target.value)}
+                className="form-select w-full h-12 rounded-lg border border-slate-200 focus:ring-blue-600 focus:border-blue-600 px-3 bg-white outline-none cursor-pointer"
+              >
+                <option value="Yes">มีเบาะหนัง (Yes)</option>
+                <option value="No">ไม่มี (No)</option>
+              </select>
             </div>
           </div>
 
+
           {/* --- เพิ่มเติม: ส่วนที่ไม่ได้ใช้คำนวณแต่มีไว้ให้ UI ครบ --- */}
-                    <div className="mb-12">
-            <p className="text-base font-semibold mb-4">สภาพรถ (มีผลต่อราคาประเมิน)</p>
+          <div className="mb-12 opacity-50 pointer-events-none grayscale">
+             {/* หมายเหตุ: ส่วนนี้ทำให้จางลงเพื่อให้ User โฟกัสส่วนสำคัญ แต่ยังคง Layout เดิมไว้ */}
+            <p className="text-base font-semibold mb-4">สภาพรถ (Optional - ไม่นำมาคำนวณ)</p>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-               {/* Excellent */}
-               <div 
-                 onClick={() => setCondition('Excellent')}
-                 className={`cursor-pointer p-4 border rounded-xl flex flex-col items-center gap-3 transition-all hover:bg-slate-50
-                   ${condition === 'Excellent' ? 'border-green-500 bg-green-50 ring-1 ring-green-500' : 'border-slate-200'}
-                 `}
-               >
-                 <span className={`material-symbols-outlined text-3xl ${condition === 'Excellent' ? 'text-green-600' : 'text-slate-400'}`}>verified_user</span>
-                 <div className="text-center">
-                   <p className="font-bold text-sm">ดีเยี่ยม</p>
-                   <p className="text-[10px] text-slate-500 mt-1">เหมือนรถใหม่</p>
-                 </div>
-               </div>
-
-               {/* Good */}
-               <div 
-                 onClick={() => setCondition('Good')}
-                 className={`cursor-pointer p-4 border rounded-xl flex flex-col items-center gap-3 transition-all hover:bg-slate-50
-                   ${condition === 'Good' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-slate-200'}
-                 `}
-               >
-                 <span className={`material-symbols-outlined text-3xl ${condition === 'Good' ? 'text-blue-600' : 'text-slate-400'}`}>sentiment_satisfied</span>
-                 <div className="text-center">
-                   <p className="font-bold text-sm">ดี</p>
-                   <p className="text-[10px] text-slate-500 mt-1">ใช้งานปกติ</p>
-                 </div>
-               </div>
-
-               {/* Fair */}
-               <div 
-                 onClick={() => setCondition('Fair')}
-                 className={`cursor-pointer p-4 border rounded-xl flex flex-col items-center gap-3 transition-all hover:bg-slate-50
-                   ${condition === 'Fair' ? 'border-orange-500 bg-orange-50 ring-1 ring-orange-500' : 'border-slate-200'}
-                 `}
-               >
-                 <span className={`material-symbols-outlined text-3xl ${condition === 'Fair' ? 'text-orange-600' : 'text-slate-400'}`}>sentiment_neutral</span>
-                 <div className="text-center">
-                   <p className="font-bold text-sm">พอใช้</p>
-                   <p className="text-[10px] text-slate-500 mt-1">มีรอย/เก็บงาน</p>
-                 </div>
-               </div>
-
-               {/* Poor */}
-               <div 
-                 onClick={() => setCondition('Poor')}
-                 className={`cursor-pointer p-4 border rounded-xl flex flex-col items-center gap-3 transition-all hover:bg-slate-50
-                   ${condition === 'Poor' ? 'border-red-500 bg-red-50 ring-1 ring-red-500' : 'border-slate-200'}
-                 `}
-               >
-                 <span className={`material-symbols-outlined text-3xl ${condition === 'Poor' ? 'text-red-600' : 'text-slate-400'}`}>report_problem</span>
-                 <div className="text-center">
-                   <p className="font-bold text-sm">ต้องซ่อม</p>
-                   <p className="text-[10px] text-slate-500 mt-1">ขายตามสภาพ</p>
-                 </div>
-               </div>
+               <div className="p-3 border rounded-lg text-center bg-slate-50">ดีเยี่ยม</div>
+               <div className="p-3 border rounded-lg text-center bg-slate-50">ดี</div>
+               <div className="p-3 border rounded-lg text-center bg-slate-50">พอใช้</div>
+               <div className="p-3 border rounded-lg text-center bg-slate-50">ซ่อมแซม</div>
             </div>
           </div>
 
