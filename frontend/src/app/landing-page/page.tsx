@@ -1,8 +1,10 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link'; // <--- 1. เพิ่มตัวนี้ เพื่อลิ้งค์ไปหน้าอื่น
 import { Sarabun, Manrope } from 'next/font/google';
+import { useRouter } from "next/navigation"; // ใช้สำหรับเปลี่ยนหน้า
+import Navbar from "../components/Navbar";
+import Link from "next/link";
 
 // --- Font Configuration ---
 const sarabun = Sarabun({
@@ -27,34 +29,7 @@ export default function LandingPage() {
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
       {/* --- HEADER --- */}
-      <header className="sticky top-0 z-50 w-full border-b border-solid border-slate-200 bg-white/90 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 md:px-10 py-4">
-          <div className="flex items-center gap-3">
-            <div className="text-[#137fec] flex items-center justify-center">
-              <span className="material-symbols-outlined text-3xl">auto_awesome</span>
-            </div>
-            <h2 className="text-xl font-extrabold tracking-tight font-[family-name:var(--font-manrope)]">ValuCar</h2>
-          </div>
-          <div className="hidden md:flex flex-1 justify-end gap-8 items-center">
-            <nav className="flex items-center gap-8">
-              <a className="text-sm font-semibold hover:text-[#137fec] transition-colors" href="#how-it-works">วิธีการใช้งาน</a>
-              <a className="text-sm font-semibold hover:text-[#137fec] transition-colors" href="#pricing">ราคาแพ็กเกจ</a>
-              <a className="text-sm font-semibold hover:text-[#137fec] transition-colors" href="#reviews">รีวิวจากลูกค้า</a>
-              
-              {/* <--- 2. แก้ลิ้งค์ไปหน้า Contact */}
-              <Link className="text-sm font-semibold hover:text-[#137fec] transition-colors" href="/contact">ติดต่อเรา</Link>
-            </nav>
-            
-            {/* <--- 3. แก้ปุ่ม Login ให้ไปหน้า Inspection หรือ Login */}
-            <Link href="/inspection" className="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-5 bg-[#137fec] text-white text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all">
-              <span>เข้าสู่ระบบ</span>
-            </Link>
-          </div>
-          <button className="md:hidden text-slate-600">
-             <span className="material-symbols-outlined">menu</span>
-          </button>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1">
         {/* --- HERO / HOW IT WORKS --- */}
