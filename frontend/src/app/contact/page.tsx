@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Sarabun, Manrope } from 'next/font/google';
+import { useRouter } from "next/navigation"; // ใช้สำหรับเปลี่ยนหน้า
+import Navbar from "../components/Navbar";
 
 // --- Font Configuration ---
 const sarabun = Sarabun({
@@ -69,27 +71,7 @@ export default function ContactPage() {
       <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
 
       {/* --- HEADER --- */}
-      <header className="sticky top-0 z-50 w-full border-b border-solid border-slate-200 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 md:px-10 py-4">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="text-[#137fec] flex items-center justify-center">
-              <span className="material-symbols-outlined text-3xl">auto_awesome</span>
-            </div>
-            <h2 className="text-xl font-extrabold tracking-tight font-[family-name:var(--font-manrope)]">ValuCar</h2>
-          </Link>
-          <div className="flex flex-1 justify-end gap-8 items-center">
-            <nav className="hidden md:flex items-center gap-8">
-              <Link className="text-sm font-semibold hover:text-[#137fec] transition-colors" href="/#how-it-works">วิธีการใช้งาน</Link>
-              <Link className="text-sm font-semibold hover:text-[#137fec] transition-colors" href="/#pricing">ราคา</Link>
-              <Link className="text-sm font-semibold hover:text-[#137fec] transition-colors" href="/#reviews">รีวิวจากลูกค้า</Link>
-              <Link className="text-sm font-semibold hover:text-[#137fec] transition-colors text-[#137fec]" href="/contact">ติดต่อเรา</Link>
-            </nav>
-            <Link href="/inspection" className="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-5 bg-[#137fec] text-white text-sm font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-600 transition-all">
-              <span>เข้าสู่ระบบ</span>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       <main className="flex-1">
         {/* --- HERO SECTION --- */}
