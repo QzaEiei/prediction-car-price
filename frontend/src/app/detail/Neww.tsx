@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Navbar from "../components/Navbar";
 import Link from "next/link";
 
-// แยก Content ออกมาเพื่อรองรับ Suspense
 const CarValuationFormContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -17,15 +16,14 @@ const CarValuationFormContent: React.FC = () => {
     model: searchParams.get('model') || 'Camry',
     prodYear: searchParams.get('year') || '2015',
   };
- 
+
   // --- 2. STATE SETTINGS ---
   const [mileage, setMileage] = useState<number | ''>(45000);
   const [selectedColor, setSelectedColor] = useState('Silver');
   const [transmission, setTransmission] = useState('Automatic');
   const [fuelType, setFuelType] = useState('Petrol');
-  const [leather, setLeather] = useState('Yes'); // เพิ่มเรื่องเบาะหนังเพราะ API ต้องการ
-
-  // State สำหรับ สภาพรถ
+  
+  // เพิ่ม State สภาพรถ (Condition)
   const [condition, setCondition] = useState('Good'); 
 
   // State สำหรับผลลัพธ์
@@ -38,7 +36,8 @@ const CarValuationFormContent: React.FC = () => {
   const currentMileage = mileage === '' ? 0 : mileage;
   const mileagePercent = Math.min((currentMileage / maxMileage) * 100, 100);
 
-    const conditionMultipliers: Record<string, number> = {
+  // --- 3. ตั้งค่า % ตามสภาพรถ ---
+  const conditionMultipliers: Record<string, number> = {
     'Excellent': 1.05, // +5%
     'Good': 1.00,      // ราคาปกติ
     'Fair': 0.90,      // -10%
@@ -57,29 +56,28 @@ const CarValuationFormContent: React.FC = () => {
     }
   };
 
-  // --- 3. ฟังก์ชันคำนวณราคา (API) ---
+  // --- 4. ฟังก์ชันคำนวณราคา (API + Condition Logic) ---
   const handlePredict = async () => {
     setLoading(true);
     setPrice(null);
 
-    // เตรียม Data ให้ตรงกับที่ API ต้องการ
     const payload = {
       Levy: parseInt(step1Data.levy),
       Manufacturer: step1Data.brand,
       Model: step1Data.model,
       Prod_year: parseInt(step1Data.prodYear),
-      Category: "Sedan",       // Default Value
-      Leather_interior: leather,
+      Category: "Sedan",
+      Leather_interior: "Yes", // Hardcode ไว้ตามที่ตกลง (ซ่อนจาก UI)
       Fuel_type: fuelType,
-      Engine_volume: 2.0,      // Default Value
+      Engine_volume: 2.0,
       Mileage: typeof mileage === 'number' ? mileage : 0,
-      Cylinders: 4,            // Default Value
+      Cylinders: 4,
       Gear_box_type: transmission,
-      Drive_wheels: "Front",   // Default Value
-      Doors: 4,                // Default Value
-      Wheel: "Left wheel",     // Default Value
+      Drive_wheels: "Front",
+      Doors: 4,
+      Wheel: "Left wheel",
       Color: selectedColor,
-      Airbags: 4               // Default Value
+      Airbags: 4
     };
 
     try {
@@ -112,11 +110,8 @@ const CarValuationFormContent: React.FC = () => {
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-slate-50 text-slate-900 font-sans">
-      
-      {/* --- HEADER --- */}
       <Navbar />
 
-      {/* --- MAIN CONTENT --- */}
       <main className="max-w-[960px] mx-auto w-full px-6 py-12">
         <div className="mb-10 text-center md:text-left">
           <h1 className="text-4xl font-black tracking-tight text-[#0d141b]">
@@ -129,7 +124,6 @@ const CarValuationFormContent: React.FC = () => {
 
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
           
-          {/* Header Card: แสดงรุ่นที่เลือกจากหน้าแรก */}
           <div className="mb-12 border-b border-slate-100 pb-8">
             <div className="flex flex-col md:flex-row gap-8 items-center justify-between">
               <div>
@@ -149,7 +143,7 @@ const CarValuationFormContent: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             
-            {/* --- 1. เลขไมล์ --- */}
+            {/* เลขไมล์ */}
             <div className="flex flex-col gap-4">
               <div className="flex items-end justify-between">
                 <label className="text-base font-semibold mb-2">เลขไมล์ (กม.)</label>
@@ -166,7 +160,6 @@ const CarValuationFormContent: React.FC = () => {
                 </div>
               </div>
 
-              {/* Slider */}
               <div className="relative w-full h-8 flex items-center mt-2">
                 <div className="absolute w-full h-1.5 bg-slate-200 rounded-full"></div>
                 <div 
@@ -187,13 +180,9 @@ const CarValuationFormContent: React.FC = () => {
                   className="absolute w-full h-full opacity-0 cursor-pointer z-30"
                 />
               </div>
-              <div className="flex justify-between text-xs text-slate-400 mt-[-10px]">
-                <span>0</span>
-                <span>{maxMileage.toLocaleString()}+</span>
-              </div>
             </div>
 
-            {/* --- 2. สีภายนอก --- */}
+            {/* สีภายนอก */}
             <div className="flex flex-col gap-2">
               <p className="text-base font-semibold pb-1">สีภายนอก</p>
               <div className="flex flex-wrap gap-3">
@@ -213,7 +202,6 @@ const CarValuationFormContent: React.FC = () => {
                     `}
                     title={color.label}
                   >
-                     {/* Checkmark ถ้าเลือกสีขาว เพื่อให้มองเห็น */}
                      {selectedColor === color.name && color.name === 'White' && (
                         <span className="absolute inset-0 flex items-center justify-center text-black font-bold">✓</span>
                      )}
@@ -229,7 +217,7 @@ const CarValuationFormContent: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             
-            {/* --- 3. ระบบเกียร์ --- */}
+            {/* ระบบเกียร์ */}
             <div className="flex flex-col gap-3">
               <label className="text-base font-semibold">ระบบเกียร์</label>
               <select 
@@ -244,7 +232,7 @@ const CarValuationFormContent: React.FC = () => {
               </select>
             </div>
 
-            {/* --- 4. เชื้อเพลิง --- */}
+            {/* เชื้อเพลิง */}
             <div className="flex flex-col gap-3">
               <label className="text-base font-semibold">ประเภทเชื้อเพลิง</label>
               <select 
@@ -259,37 +247,10 @@ const CarValuationFormContent: React.FC = () => {
                 <option value="CNG">CNG</option>
               </select>
             </div>
-            </div>
-             {/* --- ประวัติ --- */}
-          <div className="mb-12">
-            <p className="text-base font-semibold mb-4">ประวัติการเข้าศูนย์</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <label className="cursor-pointer group">
-                <input defaultChecked className="hidden peer" name="service_history" type="radio" />
-                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
-                  <span className="material-symbols-outlined text-primary">history_edu</span>
-                  <span className="text-sm font-medium">เข้าศูนย์ตลอด</span>
-                </div>
-              </label>
-              <label className="cursor-pointer group">
-                <input className="hidden peer" name="service_history" type="radio" />
-                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
-                  <span className="material-symbols-outlined text-slate-400">pending_actions</span>
-                  <span className="text-sm font-medium">เข้าศูนย์บ้าง</span>
-                </div>
-              </label>
-              <label className="cursor-pointer group">
-                <input className="hidden peer" name="service_history" type="radio" />
-                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
-                  <span className="material-symbols-outlined text-slate-400">block</span>
-                  <span className="text-sm font-medium">ไม่มีประวัติศูนย์</span>
-                </div>
-              </label>
-            </div>
           </div>
 
-          {/* --- เพิ่มเติม: ส่วนที่ไม่ได้ใช้คำนวณแต่มีไว้ให้ UI ครบ --- */}
-                    <div className="mb-12">
+          {/* --- 5. ส่วนสภาพรถ (เปิดใช้งานแล้ว!) --- */}
+          <div className="mb-12">
             <p className="text-base font-semibold mb-4">สภาพรถ (มีผลต่อราคาประเมิน)</p>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                {/* Excellent */}
@@ -301,7 +262,7 @@ const CarValuationFormContent: React.FC = () => {
                >
                  <span className={`material-symbols-outlined text-3xl ${condition === 'Excellent' ? 'text-green-600' : 'text-slate-400'}`}>verified_user</span>
                  <div className="text-center">
-                   <p className="font-bold text-sm">ดีเยี่ยม</p>
+                   <p className="font-bold text-sm">ดีเยี่ยม (+5%)</p>
                    <p className="text-[10px] text-slate-500 mt-1">เหมือนรถใหม่</p>
                  </div>
                </div>
@@ -315,7 +276,7 @@ const CarValuationFormContent: React.FC = () => {
                >
                  <span className={`material-symbols-outlined text-3xl ${condition === 'Good' ? 'text-blue-600' : 'text-slate-400'}`}>sentiment_satisfied</span>
                  <div className="text-center">
-                   <p className="font-bold text-sm">ดี</p>
+                   <p className="font-bold text-sm">ดี (ราคาตลาด)</p>
                    <p className="text-[10px] text-slate-500 mt-1">ใช้งานปกติ</p>
                  </div>
                </div>
@@ -329,7 +290,7 @@ const CarValuationFormContent: React.FC = () => {
                >
                  <span className={`material-symbols-outlined text-3xl ${condition === 'Fair' ? 'text-orange-600' : 'text-slate-400'}`}>sentiment_neutral</span>
                  <div className="text-center">
-                   <p className="font-bold text-sm">พอใช้</p>
+                   <p className="font-bold text-sm">พอใช้ (-10%)</p>
                    <p className="text-[10px] text-slate-500 mt-1">มีรอย/เก็บงาน</p>
                  </div>
                </div>
@@ -343,14 +304,14 @@ const CarValuationFormContent: React.FC = () => {
                >
                  <span className={`material-symbols-outlined text-3xl ${condition === 'Poor' ? 'text-red-600' : 'text-slate-400'}`}>report_problem</span>
                  <div className="text-center">
-                   <p className="font-bold text-sm">ต้องซ่อม</p>
+                   <p className="font-bold text-sm">ต้องซ่อม (-20%)</p>
                    <p className="text-[10px] text-slate-500 mt-1">ขายตามสภาพ</p>
                  </div>
                </div>
             </div>
           </div>
 
-          {/* --- ปุ่ม Submit --- */}
+          {/* Submit */}
           <div className="flex items-center justify-between pt-8 border-t border-slate-100">
             <button 
               onClick={() => router.back()}
@@ -371,7 +332,7 @@ const CarValuationFormContent: React.FC = () => {
         </div>
       </main>
 
-      {/* --- RESULT MODAL --- */}
+      {/* RESULT MODAL */}
       {showModal && price !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative animate-in fade-in zoom-in duration-300">
@@ -388,7 +349,8 @@ const CarValuationFormContent: React.FC = () => {
               </div>
               <h2 className="text-2xl font-bold text-slate-800 mb-2">ราคาประเมินของคุณ</h2>
               <p className="text-slate-500 mb-6">
-                ราคาตลาดสำหรับ {step1Data.brand} {step1Data.model} ({step1Data.prodYear})
+                ราคาตลาดสำหรับ {step1Data.brand} {step1Data.model} <br/>
+                <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">สภาพ: {condition === 'Excellent' ? 'ดีเยี่ยม (+5%)' : condition === 'Good' ? 'ดี (ปกติ)' : condition === 'Fair' ? 'พอใช้ (-10%)' : 'ต้องซ่อม (-20%)'}</span>
               </p>
               
               <div className="bg-green-50 border border-green-100 rounded-xl p-6 mb-6">
@@ -418,7 +380,6 @@ const CarValuationFormContent: React.FC = () => {
   );
 };
 
-// Main Export Component Wrapper with Suspense
 export default function CarValuationForm() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">กำลังโหลดข้อมูล...</div>}>
