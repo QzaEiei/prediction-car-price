@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Navbar from "../components/Navbar";
 import Link from "next/link";
 
-// แยก Content ออกมาเพื่อรองรับ Suspense
 const CarValuationFormContent: React.FC = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -23,27 +22,15 @@ const CarValuationFormContent: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState('Silver');
   const [transmission, setTransmission] = useState('Automatic');
   const [fuelType, setFuelType] = useState('Petrol');
-  const [leather, setLeather] = useState('Yes'); // เพิ่มเรื่องเบาะหนังเพราะ API ต้องการ
-
-  // State สำหรับ สภาพรถ
+  const [leather, setLeather] = useState('Yes'); // Default Yes (ไม่ได้โชว์ใน UI แต่ส่งไปคำนวณ)
   const [condition, setCondition] = useState('Good'); 
-
-  // State สำหรับผลลัพธ์
-  const [loading, setLoading] = useState(false);
-  const [price, setPrice] = useState<number | null>(null);
-  const [showModal, setShowModal] = useState(false);
 
   // Logic Slider
   const maxMileage = 300000;
   const currentMileage = mileage === '' ? 0 : mileage;
   const mileagePercent = Math.min((currentMileage / maxMileage) * 100, 100);
 
-    const conditionMultipliers: Record<string, number> = {
-    'Excellent': 1.05, // +5%
-    'Good': 1.00,      // ราคาปกติ
-    'Fair': 0.90,      // -10%
-    'Poor': 0.80       // -20%
-  };
+  const [serviceHistory, setServiceHistory] = useState('Full'); // ค่าเริ่มต้น: เข้าศูนย์ตลอด
 
   const handleMileageInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -57,57 +44,28 @@ const CarValuationFormContent: React.FC = () => {
     }
   };
 
-  // --- 3. ฟังก์ชันคำนวณราคา (API) ---
-  const handlePredict = async () => {
-    setLoading(true);
-    setPrice(null);
+  // --- 3. ฟังก์ชันส่งข้อมูลไปหน้า Loading ---
+  const handlePredict = () => {
+    // รวมข้อมูลทั้งหมดเป็น Query Params
+    const queryParams = new URLSearchParams({
+      // ข้อมูลจาก Step 1
+      levy: step1Data.levy,
+      brand: step1Data.brand,
+      model: step1Data.model,
+      year: step1Data.prodYear,
 
-    // เตรียม Data ให้ตรงกับที่ API ต้องการ
-    const payload = {
-      Levy: parseInt(step1Data.levy),
-      Manufacturer: step1Data.brand,
-      Model: step1Data.model,
-      Prod_year: parseInt(step1Data.prodYear),
-      Category: "Sedan",       // Default Value
-      Leather_interior: leather,
-      Fuel_type: fuelType,
-      Engine_volume: 2.0,      // Default Value
-      Mileage: typeof mileage === 'number' ? mileage : 0,
-      Cylinders: 4,            // Default Value
-      Gear_box_type: transmission,
-      Drive_wheels: "Front",   // Default Value
-      Doors: 4,                // Default Value
-      Wheel: "Left wheel",     // Default Value
-      Color: selectedColor,
-      Airbags: 4               // Default Value
-    };
-
-    try {
-      const res = await fetch('https://car-price-api-szgc.onrender.com/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-      
-      if (data.price) {
-        // --- คำนวณลดทอนราคาตามสภาพรถตรงนี้ ---
-        const basePrice = data.price;
-        const multiplier = conditionMultipliers[condition] || 1.0;
-        const finalPrice = basePrice * multiplier;
-
-        setPrice(finalPrice);
-        setShowModal(true);
-      } else {
-        alert("เกิดข้อผิดพลาด: " + JSON.stringify(data));
-      }
-    } catch (error) {
-      console.error(error);
-      alert("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
-    } finally {
-      setLoading(false);
-    }
+      // ข้อมูลจาก Step 2 (หน้านี้)
+      mileage: mileage === '' ? '0' : mileage.toString(),
+      color: selectedColor,
+      transmission: transmission,
+      fuelType: fuelType,
+      condition: condition,
+      leather: leather,
+      serviceHistory: serviceHistory,
+    });
+    
+    // ย้ายไปหน้า Loading (ส่งข้อมูลไปทาง URL)
+    router.push(`/load?${queryParams.toString()}`);
   };
 
   return (
@@ -261,27 +219,55 @@ const CarValuationFormContent: React.FC = () => {
             </div>
             </div>
              {/* --- ประวัติ --- */}
+{/* --- ประวัติการเข้าศูนย์ (แก้ไขแล้ว) --- */}
           <div className="mb-12">
             <p className="text-base font-semibold mb-4">ประวัติการเข้าศูนย์</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              {/* ตัวเลือก 1: เข้าตลอด */}
               <label className="cursor-pointer group">
-                <input defaultChecked className="hidden peer" name="service_history" type="radio" />
-                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
-                  <span className="material-symbols-outlined text-primary">history_edu</span>
+                <input 
+                  type="radio" 
+                  name="service_history" 
+                  value="Full"
+                  checked={serviceHistory === 'Full'}
+                  onChange={(e) => setServiceHistory(e.target.value)}
+                  className="hidden peer" 
+                />
+                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-[#137fec] peer-checked:bg-[#137fec]/5 peer-checked:text-[#137fec] hover:bg-slate-50">
+                  <span className="material-symbols-outlined">history_edu</span>
                   <span className="text-sm font-medium">เข้าศูนย์ตลอด</span>
                 </div>
               </label>
+
+              {/* ตัวเลือก 2: เข้าบ้าง */}
               <label className="cursor-pointer group">
-                <input className="hidden peer" name="service_history" type="radio" />
-                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
-                  <span className="material-symbols-outlined text-slate-400">pending_actions</span>
+                <input 
+                  type="radio" 
+                  name="service_history" 
+                  value="Partial"
+                  checked={serviceHistory === 'Partial'}
+                  onChange={(e) => setServiceHistory(e.target.value)}
+                  className="hidden peer" 
+                />
+                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-[#137fec] peer-checked:bg-[#137fec]/5 peer-checked:text-[#137fec] hover:bg-slate-50">
+                  <span className="material-symbols-outlined">pending_actions</span>
                   <span className="text-sm font-medium">เข้าศูนย์บ้าง</span>
                 </div>
               </label>
+
+              {/* ตัวเลือก 3: ไม่มีประวัติ */}
               <label className="cursor-pointer group">
-                <input className="hidden peer" name="service_history" type="radio" />
-                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-primary peer-checked:bg-primary/5 hover:bg-slate-50">
-                  <span className="material-symbols-outlined text-slate-400">block</span>
+                <input 
+                  type="radio" 
+                  name="service_history" 
+                  value="None"
+                  checked={serviceHistory === 'None'}
+                  onChange={(e) => setServiceHistory(e.target.value)}
+                  className="hidden peer" 
+                />
+                <div className="p-4 border rounded-xl flex items-center gap-3 transition-all peer-checked:border-[#137fec] peer-checked:bg-[#137fec]/5 peer-checked:text-[#137fec] hover:bg-slate-50">
+                  <span className="material-symbols-outlined">block</span>
                   <span className="text-sm font-medium">ไม่มีประวัติศูนย์</span>
                 </div>
               </label>
@@ -359,60 +345,20 @@ const CarValuationFormContent: React.FC = () => {
               <span className="material-symbols-outlined">arrow_back</span>
               ย้อนกลับ
             </button>
-            <button 
+<button 
               onClick={handlePredict}
-              disabled={loading || mileage === ''}
+              disabled={mileage === ''}
               className="bg-blue-600 text-white font-bold px-10 py-4 rounded-xl shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/40 transition-all flex items-center gap-2 disabled:bg-gray-400 disabled:shadow-none"
             >
-              {loading ? 'กำลังประมวลผล...' : 'คำนวณราคาประเมิน'}
-              {!loading && <span className="material-symbols-outlined">analytics</span>}
+              คำนวณราคาประเมิน
+              <span className="material-symbols-outlined">analytics</span>
             </button>
           </div>
         </div>
       </main>
 
       {/* --- RESULT MODAL --- */}
-      {showModal && price !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 relative animate-in fade-in zoom-in duration-300">
-            <button 
-              onClick={() => setShowModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
-            >
-              <span className="material-symbols-outlined">close</span>
-            </button>
-            
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="material-symbols-outlined text-green-600 text-3xl">payments</span>
-              </div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">ราคาประเมินของคุณ</h2>
-              <p className="text-slate-500 mb-6">
-                ราคาตลาดสำหรับ {step1Data.brand} {step1Data.model} ({step1Data.prodYear})
-              </p>
-              
-              <div className="bg-green-50 border border-green-100 rounded-xl p-6 mb-6">
-                <span className="block text-sm text-green-600 font-semibold mb-1">ราคาโดยประมาณ</span>
-                <span className="text-4xl font-black text-green-700">
-                  ฿{(price * 35).toLocaleString('th-TH', { maximumFractionDigits: 0 })}
-                </span>
-              </div>
-
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 py-3 rounded-lg border border-slate-200 font-bold hover:bg-slate-50"
-                >
-                  ปิด
-                </button>
-                <button className="flex-1 py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-700">
-                  สนใจขายรถ
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      
 
     </div>
   );
