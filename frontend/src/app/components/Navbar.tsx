@@ -56,7 +56,7 @@ export default function Navbar() {
             <Link className="text-sm font-semibold hover:text-blue-600 transition-colors" href="/landing-page#how-it-works">
               วิธีการใช้งาน
             </Link>
-          
+              
             {/* อย่าลืมไปใส่ id="reviews" ที่ section รีวิว */}
             <Link className="text-sm font-semibold hover:text-blue-600 transition-colors" href="/landing-page#reviews">
               รีวิวจากลูกค้า
