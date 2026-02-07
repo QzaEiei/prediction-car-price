@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from "next/navigation"; 
+import Navbar from "../components/Navbar";
+import Link from "next/link";
 
 // --- Mock Data: Locations ---
 const LOCATIONS = [
@@ -61,7 +64,6 @@ export default function AppointmentPage() {
       date.setDate(today.getDate() + i);
       
       const dayNum = date.getDate();
-      // ใช้ภาษาไทยแบบ simple เพื่อป้องกัน error เรื่อง locale
       const monthNames = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
       const dayNames = ["อา.", "จ.", "อ.", "พ.", "พฤ.", "ศ.", "ส."];
       
@@ -84,7 +86,6 @@ export default function AppointmentPage() {
   // --- Handle Confirm ---
   const handleConfirm = () => {
     setIsSubmitting(true);
-    // จำลอง API Call 1.5 วินาที
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSuccess(true);
@@ -92,31 +93,15 @@ export default function AppointmentPage() {
   };
 
   return (
-    // ตัด font variable ออก ใช้ font-sans ปกติ
     <div className="font-sans bg-[#f8f9fa] text-[#0d141b] min-h-screen flex flex-col">
       
-      {/* Import Icons: ใช้ Link ธรรมดาเพื่อความชัวร์ */}
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+      {/* ✅ แก้ไขจุดที่ 1: อัปเดต Link Font ให้รองรับการเติมสี (FILL 0..1) 
+        สังเกตตรง FILL@0..1
+      */}
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0..1,0" />
 
       {/* --- HEADER --- */}
-      <header className="flex items-center justify-between border-b border-[#eef2f6] bg-white px-6 md:px-10 py-3 sticky top-0 z-40 shadow-sm">
-        <div className="flex items-center gap-3 text-[#137fec]">
-           <div className="w-8 h-8 bg-[#137fec] rounded-lg flex items-center justify-center text-white">
-             <span className="material-symbols-outlined text-xl">directions_car</span>
-           </div>
-          <h2 className="text-[#0d141b] text-xl font-black tracking-tight">ValuCar</h2>
-        </div>
-        
-        <nav className="hidden md:flex items-center gap-8">
-            <a className="text-[#64748b] hover:text-[#137fec] text-sm font-semibold transition-colors" href="#">วิธีการใช้งาน</a>
-            <a className="text-[#64748b] hover:text-[#137fec] text-sm font-semibold transition-colors" href="#">ราคา</a>
-            <a className="text-[#64748b] hover:text-[#137fec] text-sm font-semibold transition-colors" href="#">รีวิวจากลูกค้า</a>
-            <a className="text-[#64748b] hover:text-[#137fec] text-sm font-semibold transition-colors" href="#">ติดต่อเรา</a>
-            <button className="bg-[#137fec] text-white text-sm font-bold px-5 py-2 rounded-lg hover:bg-blue-600 transition-colors">
-              เข้าสู่ระบบ
-            </button>
-        </nav>
-      </header>
+      <Navbar />
 
       {/* --- MAIN CONTENT --- */}
       <main className="flex-1 w-full max-w-[1280px] mx-auto px-4 md:px-6 py-8 pb-32 lg:pb-8"> 
@@ -179,7 +164,6 @@ export default function AppointmentPage() {
             <div className="flex flex-col gap-4">
               {LOCATIONS.map((loc) => {
                 const isSelected = selectedLocation === loc.id;
-                // แก้ไขการสร้างลิงก์ Map ให้ปลอดภัยและถูกต้อง
                 const mapLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(loc.name + ' ' + loc.address)}`;
 
                 return (
@@ -235,7 +219,14 @@ export default function AppointmentPage() {
                             ห่างออกไป {loc.distance}
                           </span>
                           <span className="flex items-center gap-1">
-                            <span className="material-symbols-outlined text-sm text-yellow-500">star</span>
+                            {/* ✅ แก้ไขจุดที่ 2: ใส่ style FILL 1 ให้ดาวเต็มดวง 
+                            */}
+                            <span 
+                              className="material-symbols-outlined text-sm text-yellow-500" 
+                              style={{ fontVariationSettings: "'FILL' 1" }}
+                            >
+                              star
+                            </span>
                             {loc.rating}
                           </span>
                         </div>
@@ -287,7 +278,6 @@ export default function AppointmentPage() {
                 <div className="grid grid-cols-3 gap-2">
                   {TIME_SLOTS.map((time, index) => {
                      const isSelected = selectedTime === time;
-                     // Logic: สมมติว่าบางเวลาเต็ม
                      const dayIndex = dateList.findIndex(d => d.full === selectedDate);
                      const isFull = (dayIndex === 0 && index < 1) || (dayIndex === 1 && index === 2) || (index === 3);
 
