@@ -4,6 +4,7 @@ import React from 'react';
 import { Sarabun, Manrope } from 'next/font/google';
 import { useRouter } from "next/navigation"; // ใช้สำหรับเปลี่ยนหน้า
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import Link from "next/link";
 
 // --- Font Configuration ---
@@ -167,41 +168,7 @@ export default function LandingPage() {
       </main>
 
       {/* --- FOOTER --- */}
-      <footer className="bg-white border-t border-slate-200 py-12">
-        <div className="mx-auto max-w-[1280px] px-6">
-          <div className="flex flex-col md:flex-row justify-between gap-10">
-            <div className="max-w-xs">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="material-symbols-outlined text-[#137fec] text-3xl">auto_awesome</span>
-                <h2 className="text-xl font-extrabold tracking-tight font-[family-name:var(--font-manrope)]">ValuCar</h2>
-              </div>
-              <p className="text-slate-500 text-sm leading-relaxed">
-                แพลตฟอร์มประเมินราคารถยนต์ที่ได้รับความไว้วางใจสูงสุด
-              </p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-10">
-              <div className="flex flex-col gap-4">
-                <h4 className="font-bold">บริการ</h4>
-                <nav className="flex flex-col gap-2 text-sm text-slate-500">
-                   {/* แก้ลิ้งค์ Footer ด้วย */}
-                  <Link className="hover:text-[#137fec]" href="/inspection">เช็กราคารถ</Link>
-                  <Link className="hover:text-[#137fec]" href="/inspection">นัดตรวจสภาพ</Link>
-                </nav>
-              </div>
-              <div className="flex flex-col gap-4">
-                <h4 className="font-bold">ช่วยเหลือ</h4>
-                <nav className="flex flex-col gap-2 text-sm text-slate-500">
-                  <Link className="hover:text-[#137fec]" href="/contact">ติดต่อเรา</Link>
-                  <a className="hover:text-[#137fec]" href="#">คำถามที่พบบ่อย</a>
-                </nav>
-              </div>
-            </div>
-          </div>
-          <div className="mt-12 pt-8 border-t border-slate-100 text-center text-slate-400 text-xs">
-             © 2024 ValuCar App. สงวนลิขสิทธิ์
-          </div>
-        </div>
-      </footer>
+    <Footer />
     </div>
   );
 }
