@@ -11,14 +11,14 @@ export default function Footer() {
           {/* --- Brand Section (ส่วนที่แก้ไข) --- */}
           <div className="max-w-xs">
             {/* 1. ใช้ flex เพื่อจัดให้ โลโก้ และ ชื่อ อยู่บรรทัดเดียวกัน */}
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex items-center gap-3 mb-4">
               {/* โลโก้ */}
-              <div className="relative h-10 w-16 flex-shrink-0">
+              <div className="relative h-10 w-13 flex-shrink-0">
                 <Image 
-                    src="/logo_klang.png"
+                    src="/klang_2.jpg"
                     alt="Klang Checkpoint Logo"
                     fill
-                    className="object-contain scale-200" 
+                    className="object-contain scale-150 object-left" 
                 />
               </div>
               {/* ชื่อแบรนด์ */}
