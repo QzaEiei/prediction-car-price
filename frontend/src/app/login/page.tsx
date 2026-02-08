@@ -1,5 +1,5 @@
 // src/app/login/page.tsx
-"use client"; // สำคัญ! ต้องมีบรรทัดนี้เพราะมีการใช้ useState
+"use client";
 
 import { useState } from 'react';
 import axios from 'axios';
@@ -28,16 +28,21 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // ยิง API ไปที่ route ที่เราเพิ่งสร้าง
+      // ยิง API ไปตรวจสอบ
       const res = await axios.post('/api/login', formData);
       
       if (res.status === 200) {
+        // ✅ 1. บันทึกข้อมูล User ลงใน LocalStorage (สำคัญมาก! เพื่อให้ Navbar รู้จัก)
+        localStorage.setItem('user', JSON.stringify(res.data.user));
+
         alert('เข้าสู่ระบบสำเร็จ! 🎉');
-        // พาไปหน้าแรก (หรือหน้า Dashboard)
-        router.push('/'); 
+        
+        // ✅ 2. ใช้ window.location.href แทน router.push 
+        // เพื่อบังคับให้หน้าเว็บ Refresh ใหม่ Navbar จะได้เปลี่ยนจากปุ่ม Login เป็นชื่อเราทันที
+        window.location.href = '/'; 
       }
     } catch (err: any) {
-      // จัดการ Error ที่ตอบกลับมาจาก API
+      // จัดการ Error
       setError(err.response?.data?.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
     } finally {
       setLoading(false);
@@ -92,7 +97,7 @@ export default function LoginPage() {
         <p className="text-sm text-center text-gray-600">
           ยังไม่มีบัญชี?{' '}
           <Link href="/register" className="text-blue-600 hover:underline">
-            สมัครสมาชิกก
+            สมัครสมาชิก
           </Link>
         </p>
       </div>

@@ -19,6 +19,8 @@ model User {
   role      Role     @default(USER) // แยก User กับ Admin
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  contactMessages ContactMessage[]
 
   // ความสัมพันธ์
   valuations   Valuation[]   // ผู้ใช้คนนี้เคยทำนายรถอะไรบ้าง
@@ -81,7 +83,36 @@ model Appointment {
   user        User?     @relation(fields: [userId], references: [id])
 }
 
+// --- 5. ตารางสำหรับฟอร์ม "ติดต่อเรา" (Contact Us) ---
+model ContactMessage {
+  id        String   @id @default(uuid())
+  
+  // ข้อมูลจากฟอร์มในรูป
+  name      String   // ชื่อ-นามสกุล
+  email     String?  // อีเมล (ใส่ ? เผื่อเขาไม่กรอก)
+  phone     String   // เบอร์โทรศัพท์
+  message   String   // ข้อความ
+
+  // ข้อมูลสำหรับ Admin (ไว้จัดการหลังบ้าน)
+  status    ContactStatus @default(PENDING) // สถานะ: รออ่าน, อ่านแล้ว, ตอบแล้ว
+  createdAt DateTime @default(now())      // วันที่ส่งข้อความ
+
+  // (Optional) ถ้าคนส่ง Login อยู่ ก็ผูกกับ User ได้ แต่ถ้าเป็น Guest ก็เป็น null
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+
+
+
 // --- Enums (ตัวเลือกคงที่) ---
+
+enum ContactStatus {
+  PENDING   // รออ่าน / รอดำเนินการ
+  READ      // เปิดอ่านแล้ว
+  REPLIED   // ตอบกลับแล้ว
+  SPAM      // ขยะ / โฆษณา
+}
 
 enum Role {
   USER
