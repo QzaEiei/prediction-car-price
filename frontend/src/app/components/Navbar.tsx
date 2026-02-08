@@ -1,82 +1,117 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react"; // เพิ่ม useState
 import Link from "next/link";
 import Image from "next/image";
-// import { usePathname } from "next/navigation"; // เผื่อใช้เช็ค Active link ในอนาคต
 
 export default function Navbar() {
-  
+  // สร้างตัวแปรไว้เก็บสถานะ เปิด/ปิด เมนู
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white">
-      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-6 md:px-10 py-4">
+      <div className="mx-auto flex max-w-[1280px] items-center justify-between px-4 md:px-10 py-3 md:py-4">
         
-        {/* --- Logo Section --- */}
-        {/* Link ไปที่หน้าแรก (Root) */}
+        {/* --- 1. LOGO SECTION --- */}
         <Link 
           href="/home" 
-          className="flex items-center cursor-pointer group" 
+          className="flex items-center gap-3 cursor-pointer group" 
           onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
         >
-            {/* Icon: เปลี่ยนเป็นรูปรถเครื่องมือช่าง สื่อถึงการตรวจเช็ค */}
-{/* 1. ตั้งกล่อง div ให้ขนาดเท่าเดิม (h-12) เพื่อไม่ให้ดัน Navbar สูงขึ้น */}
-        <div className="relative h-12 w-20 group">
-            <Image 
-                src="/klang_2.jpg"
-                alt="Klang Checkpoint Logo"
-                fill
-                className="object-contain scale-150 origin-right" 
-                priority
-            />
-            {/* อธิบาย Class:
-              - scale-150 : ขยายรูปให้ใหญ่ขึ้น 1.5 เท่า (ใหญ่กว่ากล่อง)
-              - origin-lef  t : ให้ขยายโดยยึดฝั่งซ้ายเป็นหลัก (จะได้ไม่ไปทับตัวหนังสือ)
-            */}
-        </div>
+            <div className="relative h-10 w-28 md:h-12 md:w-36 flex-shrink-0">
+                <Image 
+                    src="/klang_2.jpg"
+                    alt="Klang Checkpoint Logo"
+                    fill
+                    className="object-contain object-left" 
+                    priority
+                />
+            </div>
             
-            {/* Text: ชื่อแบรนด์ */}
-        {/* Text: ชื่อแบรนด์ */}
-          <div className="flex flex-col">
-              <h2 className="text-xl font-extrabold tracking-tight text-slate-900 leading-none uppercase">
-                  KLANG CHECKPOINT
-              </h2>
-              {/* แก้ตรงนี้: เปลี่ยน text-slate-500 เป็น text-slate-600 และเพิ่ม font-semibold */}
-              <span className="text-[12px] font-semibold text-slate-600 tracking-wide mt-[2px]">
-                  กลางตรวจเช็ค
-              </span>
-          </div>
+            {/* โชว์ชื่อเฉพาะใน PC */}
+            <div className="hidden md:flex flex-col">
+                <h2 className="text-xl font-extrabold tracking-tight text-slate-900 leading-none uppercase">
+                    KLANG CHECKPOINT
+                </h2>
+                <span className="text-[12px] font-semibold text-slate-600 tracking-wide mt-[2px]">
+                    กลางตรวจเช็ค
+                </span>
+            </div>
         </Link>
 
-        {/* --- Navigation Links --- */}
-        <div className="flex flex-1 justify-end gap-8">
-          <nav className="hidden md:flex items-center gap-8 text-slate-600">
-            
-            {/* Anchor Links: ลิงก์ไปยังส่วนต่างๆ ภายในหน้า Landing Page */}
-            {/* อย่าลืมไปใส่ id="how-it-works" ที่ section วิธีการใช้งาน ในหน้า page.tsx หลัก */}
+        {/* --- 2. DESKTOP MENU (โชว์เฉพาะ PC) --- */}
+        <div className="hidden md:flex flex-1 justify-end items-center gap-8">
+          <nav className="flex items-center gap-8 text-slate-600">
             <Link className="text-sm font-semibold hover:text-blue-600 transition-colors" href="/landing-page#how-it-works">
               วิธีการใช้งาน
             </Link>
-              
-            {/* อย่าลืมไปใส่ id="reviews" ที่ section รีวิว */}
             <Link className="text-sm font-semibold hover:text-blue-600 transition-colors" href="/landing-page#reviews">
               รีวิวจากลูกค้า
             </Link>
-
-            {/* Page Link: ลิงก์ไปยังหน้า Contact (src/app/contact/page.tsx) */}
             <Link className="text-sm font-semibold hover:text-blue-600 transition-colors" href="/contact">
               ติดต่อเรา
             </Link>
           </nav>
-
-          {/* --- Login Button --- */}
-          {/* ลิงก์ไปยังหน้า Login (src/app/login/page.tsx) */}
+          
           <Link href="/login">
-            <button className="flex min-w-[100px] cursor-pointer items-center justify-center rounded-lg h-10 px-5 bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95">
+            <button className="flex items-center justify-center rounded-lg h-10 px-5 bg-blue-600 text-white text-sm font-bold shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-95">
               <span>เข้าสู่ระบบ</span>
             </button>
           </Link>
         </div>
+
+        {/* --- 3. MOBILE HAMBURGER BUTTON (โชว์เฉพาะมือถือ) --- */}
+        <div className="md:hidden flex items-center gap-4">
+            {/* ปุ่ม Login เล็กๆ ในมือถือ (Optional: ถ้าอยากให้มีปุ่ม Login ข้างนอกด้วย) */}
+            <Link href="/login" className="bg-blue-600 text-white text-xs font-bold px-3 py-2 rounded-md">
+                เข้าสู่ระบบ
+            </Link>
+
+            {/* ปุ่ม 3 ขีด */}
+            <button 
+                onClick={() => setIsOpen(!isOpen)} 
+                className="text-slate-600 focus:outline-none p-2"
+            >
+                {isOpen ? (
+                    // ไอคอนกากบาท (Close)
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                ) : (
+                    // ไอคอน 3 ขีด (Menu)
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
+                )}
+            </button>
+        </div>
+
       </div>
+
+      {/* --- 4. MOBILE MENU DROPDOWN (ส่วนที่เลื่อนลงมา) --- */}
+      {/* จะแสดงผลเมื่อ isOpen = true เท่านั้น */}
+      {isOpen && (
+        <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-slate-200 shadow-xl py-4 px-6 flex flex-col gap-4 animate-in slide-in-from-top-5 duration-200">
+            <Link 
+                className="text-slate-600 font-semibold py-2 border-b border-slate-100" 
+                href="/landing-page#how-it-works"
+                onClick={() => setIsOpen(false)} // กดแล้วปิดเมนู
+            >
+              วิธีการใช้งาน
+            </Link>
+            <Link 
+                className="text-slate-600 font-semibold py-2 border-b border-slate-100" 
+                href="/landing-page#reviews"
+                onClick={() => setIsOpen(false)}
+            >
+              รีวิวจากลูกค้า
+            </Link>
+            <Link 
+                className="text-slate-600 font-semibold py-2 border-b border-slate-100" 
+                href="/contact"
+                onClick={() => setIsOpen(false)}
+            >
+              ติดต่อเรา
+            </Link>
+        </div>
+      )}
+
     </header>
   );
 }
