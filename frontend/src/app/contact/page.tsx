@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Sarabun, Manrope } from 'next/font/google';
 import { useRouter } from "next/navigation"; // ใช้สำหรับเปลี่ยนหน้า
+import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 
 // --- Font Configuration ---
@@ -229,7 +230,7 @@ export default function ContactPage() {
         </section>
 
         {/* --- 3. ส่วน FAQ Section (เพิ่มเข้ามาใหม่) --- */}
-        <section className="bg-white py-16 border-t border-slate-100">
+        <section id="faq" className="bg-white py-16 border-t border-slate-100 scroll-mt-24">
             <div className="mx-auto max-w-[800px] px-6">
                 <div className="text-center mb-10">
                     <h2 className="text-2xl md:text-3xl font-bold mb-3 font-[family-name:var(--font-manrope)]">คำถามที่พบบ่อย (FAQ)</h2>
@@ -259,49 +260,7 @@ export default function ContactPage() {
       </main>
 
       {/* --- FOOTER --- */}
-      <footer className="bg-white border-t border-slate-200 py-12">
-        <div className="mx-auto max-w-[1280px] px-6">
-          <div className="flex flex-col md:flex-row justify-between gap-10">
-            <div className="max-w-xs">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="material-symbols-outlined text-[#137fec] text-3xl">auto_awesome</span>
-                <h2 className="text-xl font-extrabold tracking-tight font-[family-name:var(--font-manrope)]">ValuCar</h2>
-              </div>
-              <p className="text-slate-500 text-sm leading-relaxed">
-                แพลตฟอร์มประเมินราคารถยนต์ที่ได้รับความไว้วางใจสูงสุด เราช่วยให้เจ้าของรถเข้าใจมูลค่าที่แท้จริงของรถยนต์
-              </p>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-10">
-              <div className="flex flex-col gap-4">
-                <h4 className="font-bold">บริษัท</h4>
-                <nav className="flex flex-col gap-2 text-sm text-slate-500">
-                  <a className="hover:text-[#137fec]" href="#">เกี่ยวกับเรา</a>
-                  <a className="hover:text-[#137fec]" href="#">ร่วมงานกับเรา</a>
-                  <a className="hover:text-[#137fec]" href="#">ข่าวประชาสัมพันธ์</a>
-                </nav>
-              </div>
-              <div className="flex flex-col gap-4">
-                <h4 className="font-bold">กฎหมาย</h4>
-                <nav className="flex flex-col gap-2 text-sm text-slate-500">
-                  <a className="hover:text-[#137fec]" href="#">นโยบายความเป็นส่วนตัว</a>
-                  <a className="hover:text-[#137fec]" href="#">เงื่อนไขการให้บริการ</a>
-                  <a className="hover:text-[#137fec]" href="#">คุกกี้</a>
-                </nav>
-              </div>
-              <div className="flex flex-col gap-4">
-                <h4 className="font-bold">สนับสนุน</h4>
-                <nav className="flex flex-col gap-2 text-sm text-slate-500">
-                  <a className="hover:text-[#137fec]" href="#">ศูนย์ช่วยเหลือ</a>
-                  <a className="hover:text-[#137fec]" href="#">ติดต่อฝ่ายบริการ</a>
-                </nav>
-              </div>
-            </div>
-          </div>
-          <div className="mt-12 pt-8 border-t border-slate-100 text-center text-slate-400 text-xs">
-             © 2024 ValuCar App. สงวนลิขสิทธิ์
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

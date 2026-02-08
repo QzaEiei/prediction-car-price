@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 // import { usePathname } from "next/navigation"; // เผื่อใช้เช็ค Active link ในอนาคต
 
 export default function Navbar() {
@@ -12,15 +13,26 @@ export default function Navbar() {
         
         {/* --- Logo Section --- */}
         {/* Link ไปที่หน้าแรก (Root) */}
-<Link 
+        <Link 
           href="/home" 
-          className="flex items-center gap-3 cursor-pointer group" 
+          className="flex items-center cursor-pointer group" 
           onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}
         >
             {/* Icon: เปลี่ยนเป็นรูปรถเครื่องมือช่าง สื่อถึงการตรวจเช็ค */}
-            <div className="text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                <span className="material-symbols-outlined text-4xl">car_repair</span>
-            </div>
+{/* 1. ตั้งกล่อง div ให้ขนาดเท่าเดิม (h-12) เพื่อไม่ให้ดัน Navbar สูงขึ้น */}
+        <div className="relative h-12 w-20 group">
+            <Image 
+                src="/klang_2.jpg"
+                alt="Klang Checkpoint Logo"
+                fill
+                className="object-contain scale-150 origin-right" 
+                priority
+            />
+            {/* อธิบาย Class:
+              - scale-150 : ขยายรูปให้ใหญ่ขึ้น 1.5 เท่า (ใหญ่กว่ากล่อง)
+              - origin-lef  t : ให้ขยายโดยยึดฝั่งซ้ายเป็นหลัก (จะได้ไม่ไปทับตัวหนังสือ)
+            */}
+        </div>
             
             {/* Text: ชื่อแบรนด์ */}
         {/* Text: ชื่อแบรนด์ */}
@@ -44,12 +56,7 @@ export default function Navbar() {
             <Link className="text-sm font-semibold hover:text-blue-600 transition-colors" href="/landing-page#how-it-works">
               วิธีการใช้งาน
             </Link>
-            
-            {/* อย่าลืมไปใส่ id="pricing" ที่ section ราคา */}
-            <Link className="text-sm font-semibold hover:text-blue-600 transition-colors" href="/landing-page#pricing">
-              ราคา
-            </Link>
-            
+              
             {/* อย่าลืมไปใส่ id="reviews" ที่ section รีวิว */}
             <Link className="text-sm font-semibold hover:text-blue-600 transition-colors" href="/landing-page#reviews">
               รีวิวจากลูกค้า
