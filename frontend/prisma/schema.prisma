@@ -3,11 +3,96 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")  // <--- บรรทัดนี้หายไปครับ ต้องเติมกลับมา!
+  directUrl = env("DIRECT_URL")    // (ถ้าใช้ Supabase ควรมีบรรทัดนี้ด้วย)
+}
+// 1. ตั้งค่าการเชื่อมต่อ
+
+
+// --- 2. ตารางผู้ใช้งาน (รองรับ Login/Register) ---
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // เก็บแบบ Hash (แนะนำใช้ bcrypt)
+  name      String?
+  role      Role     @default(USER) // แยก User กับ Admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ความสัมพันธ์
+  valuations   Valuation[]   // ผู้ใช้คนนี้เคยทำนายรถอะไรบ้าง
+  appointments Appointment[] // ผู้ใช้คนนี้มีการนัดหมายอะไรบ้าง
 }
 
-model TestPing {
-  id        Int      @id @default(autoincrement())
-  message   String
+// --- 3. ตารางประวัติการทำนายราคา (Valuation) ---
+model Valuation {
+  id        String   @id @default(uuid())
+  
+  // ข้อมูลรถที่กรอกเข้ามา
+  brand          String
+  model          String
+  year           String
+  mileage        Int
+  color          String
+  condition      String
+  serviceHistory String  // เก็บค่า Full, Partial, None
+  fuelType       String? // เก็บค่า Petrol, Diesel, EV ฯลฯ
+  transmission   String? // เก็บค่า Automatic, Manual
+
+  // ผลลัพธ์การทำนาย
+  predictedPrice Float   // ราคากลางที่ AI ทำนาย (บาท)
+  minPrice       Float   // ช่วงราคาต่ำสุด
+  maxPrice       Float   // ช่วงราคาสูงสุด
+
+  createdAt      DateTime @default(now())
+
+  // ความสัมพันธ์: ผูกกับ User (ถ้า Login) หรือเป็น Guest (Optional)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  // ความสัมพันธ์: การนัดหมายที่เกิดจากการประเมินนี้
+  appointment Appointment?
+}
+
+// --- 4. ตารางการนัดหมาย (สำหรับ Dashboard Admin) ---
+model Appointment {
+  id        String   @id @default(uuid())
+  
+  // ข้อมูลติดต่อ (อาจจะดึงจาก User หรือกรอกใหม่)
+  contactName String
+  contactTel  String
+  lineId      String?
+  note        String?  // หมายเหตุเพิ่มเติมจากลูกค้า
+
+  // สถานะการนัดหมาย
+  status    AppointmentStatus @default(PENDING)
+  date      DateTime?         // วันที่ลูกค้านัดเอารถเข้ามา (ถ้ามี)
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ความสัมพันธ์: ผูกกับ Valuation ไหน (จะได้รับซื้อถูกคัน)
+  valuationId String    @unique
+  valuation   Valuation @relation(fields: [valuationId], references: [id])
+
+  // ความสัมพันธ์: ผูกกับ User (ถ้ามี)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+}
+
+// --- Enums (ตัวเลือกคงที่) ---
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING   // รอดำเนินการ (Admin ยังไม่ดู)
+  CONTACTED // ติดต่อแล้ว
+  CONFIRMED // นัดวันแล้ว
+  COMPLETED // ซื้อขายสำเร็จ
+  CANCELLED // ยกเลิก
+  REJECTED  // ปฏิเสธรับซื้อ
 }
