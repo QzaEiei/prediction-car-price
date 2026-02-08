@@ -103,7 +103,7 @@ export default function Home() {
       const response = await axios.post<PredictionResponse>('https://car-price-api-szgc.onrender.com/predict', formData);
       setPrice(response.data.price);
     } catch (error) {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+      alert("เกิดข้อผิดพลาดในการเชื่อมต่ออ");
     } finally {
       setLoading(false);
     }
