@@ -10,6 +10,7 @@ import Navbar from '../components/Navbar';
 
 
 export default function LoginPage() {
+  
   const router = useRouter();
   // ✅ 2. ประกาศตัวแปรรับค่า params
   const searchParams = useSearchParams(); 
