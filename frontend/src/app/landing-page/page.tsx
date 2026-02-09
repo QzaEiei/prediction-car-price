@@ -82,7 +82,7 @@ export default function LandingPage() {
 
             {/* ปุ่ม CTA เพิ่มเติมใต้ขั้นตอน */}
             <div className="mt-12 text-center">
-              <Link href="/inspection" className="inline-flex items-center gap-2 px-8 py-3 bg-[#137fec] text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition-all">
+              <Link href="/#car-form" className="inline-flex items-center gap-2 px-8 py-3 bg-[#137fec] text-white font-bold rounded-lg shadow-lg hover:bg-blue-600 transition-all">
                 เริ่มประเมินราคารถ
                 <span className="material-symbols-outlined">arrow_forward</span>
               </Link>
