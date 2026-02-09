@@ -245,7 +245,7 @@ export default function ValuCarPage() {
       </main>
 
       {/* --- Footer --- */}
-      <footer />
+      <Footer />
     </div>
   );
 } 
