@@ -15,7 +15,7 @@ function LoginForm() {
   const searchParams = useSearchParams(); // ✅ ใช้ได้แล้ว เพราะถูกห่อด้วย Suspense
 
   const [formData, setFormData] = useState({
-    email: '',
+    email: '',   
     password: '',
   });
   const [error, setError] = useState('');
