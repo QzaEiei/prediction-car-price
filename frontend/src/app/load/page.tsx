@@ -2,21 +2,25 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { Manrope, Noto_Sans_Thai } from 'next/font/google';
-import { useRouter, useSearchParams } from "next/navigation"; 
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "../components/Navbar";
 
 // ตั้งค่า Font
-const manrope = Manrope({ subsets: ['latin'], display: 'swap', variable: '--font-manrope' });
+const manrope = Manrope({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-manrope'
+});
 const notoSansThai = Noto_Sans_Thai({ subsets: ['thai'], display: 'swap', variable: '--font-noto-sans-thai' });
 
 function ProcessingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const [progress, setProgress] = useState(0);
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null); // เก็บ URL ปลายทางเมื่อคำนวณเสร็จ
 
-  
+
   const serviceHistory = searchParams.get('serviceHistory') || 'Full';
   // --- ส่วนที่ 1: ยิง API ---
   useEffect(() => {
@@ -61,7 +65,7 @@ function ProcessingPageContent() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        
+
         const data = await res.json();
 
         if (data.price) {
@@ -78,7 +82,7 @@ function ProcessingPageContent() {
           // สร้าง URL ปลายทาง แล้วเก็บใส่ State (ยังไม่ Push ทันที)
           const params = new URLSearchParams({
             price: finalPrice.toString(),
-            brand, model, year, color,fuelType,transmission,serviceHistory,
+            brand, model, year, color, fuelType, transmission, serviceHistory,
             mileage: mileage.toString(),
             condition
           });
@@ -116,9 +120,9 @@ function ProcessingPageContent() {
         }
 
         // ถ้า API เสร็จแล้ว (redirectUrl มีค่า) ให้วิ่งเร็วขึ้นจนถึง 100%
-        const jump = redirectUrl ? 5 : 1; 
+        const jump = redirectUrl ? 5 : 1;
         const increment = Math.random() * jump + 0.5;
-        
+
         return Math.min(prev + increment, 100);
       });
     }, 50);
@@ -148,11 +152,11 @@ function ProcessingPageContent() {
 
       <main className="flex-1 flex flex-col items-center justify-center px-4 py-12">
         <div className="max-w-2xl w-full flex flex-col items-center text-center">
-          
+
           {/* Circular Icon */}
           <div className="mb-10 relative">
             <div className="w-40 h-40 rounded-full border-[6px] border-[#137fec] flex items-center justify-center bg-white shadow-lg z-10 relative">
-               <span className="material-symbols-outlined text-[#137fec] text-7xl">directions_car</span>
+              <span className="material-symbols-outlined text-[#137fec] text-7xl">directions_car</span>
             </div>
             <div className="absolute inset-0 rounded-full border-[6px] border-[#137fec]/30 animate-ping"></div>
           </div>
@@ -169,10 +173,10 @@ function ProcessingPageContent() {
             <div className="flex justify-between items-end mb-3">
               <div className="text-left">
                 <p className="font-bold text-gray-900 text-lg">
-                   {progress === 100 ? 'เสร็จสิ้น' : 'กำลังประมวลผล'}
+                  {progress === 100 ? 'เสร็จสิ้น' : 'กำลังประมวลผล'}
                 </p>
                 <p className="text-sm text-gray-400 mt-1">
-                   {progress === 100 ? 'เตรียมแสดงผลลัพธ์...' : 'ตรวจสอบสภาพและปีรถ'}
+                  {progress === 100 ? 'เตรียมแสดงผลลัพธ์...' : 'ตรวจสอบสภาพและปีรถ'}
                 </p>
               </div>
               <div className="text-3xl font-bold text-[#137fec]">
@@ -181,7 +185,7 @@ function ProcessingPageContent() {
             </div>
 
             <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-[#137fec] rounded-full transition-all duration-100 ease-out"
                 style={{ width: `${progress}%` }}
               ></div>
@@ -201,7 +205,7 @@ function ProcessingPageContent() {
 
             {/* Step 2 */}
             <div className="flex flex-col items-center gap-2 w-20">
-               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white transition-colors duration-500 ${progress > 50 ? 'bg-[#137fec]' : 'bg-gray-200'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white transition-colors duration-500 ${progress > 50 ? 'bg-[#137fec]' : 'bg-gray-200'}`}>
                 <span className="material-symbols-outlined text-sm">check</span>
               </div>
               <span className={`text-xs ${progress > 50 ? 'text-[#137fec] font-bold' : 'text-gray-400'}`}>วิเคราะห์</span>
@@ -210,7 +214,7 @@ function ProcessingPageContent() {
 
             {/* Step 3 */}
             <div className="flex flex-col items-center gap-2 w-20">
-               <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${progress >= 100 ? 'bg-[#137fec] border-[#137fec] text-white' : 'bg-white border-gray-200 text-gray-300'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all duration-500 ${progress >= 100 ? 'bg-[#137fec] border-[#137fec] text-white' : 'bg-white border-gray-200 text-gray-300'}`}>
                 <span className="material-symbols-outlined text-sm">trending_up</span>
               </div>
               <span className={`text-xs ${progress >= 100 ? 'text-[#137fec] font-bold' : 'text-gray-400'}`}>สรุปราคา</span>
@@ -219,7 +223,7 @@ function ProcessingPageContent() {
 
         </div>
       </main>
-      
+
       <footer className="py-6 text-center text-gray-400 text-xs">
         Powered by AutoValue Intelligence AI Engine
       </footer>
