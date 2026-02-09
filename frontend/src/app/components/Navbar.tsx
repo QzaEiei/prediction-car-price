@@ -72,15 +72,11 @@ export default function Navbar() {
           {/* ✅ จุดเปลี่ยน: ถ้ามี User โชว์ชื่อ / ถ้าไม่มี โชว์ปุ่ม Login */}
           {user ? (
             <div className="flex items-center gap-4 border-l pl-6 border-slate-200">
-              <span className="text-sm font-bold text-slate-700">
+              <Link href='/profile'
+              className="text-sm font-bold text-slate-700">
                 สวัสดี, <span className="text-blue-600">{user.name}</span>
-              </span>
-              <button 
-                onClick={handleLogout}
-                className="text-xs text-red-500 hover:text-red-700 font-semibold border border-red-200 px-3 py-1 rounded-full hover:bg-red-50 transition-all"
-              >
-                ออกจากระบบ
-              </button>
+              </Link>
+
             </div>
           ) : (
             <Link href="/login">

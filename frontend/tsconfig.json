@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "src/lib/supabaseClient.js"  ],
+, "src/lib/supabaseClient.js", "src/app/api/admin/asdd"  ],
   "exclude": ["node_modules"]
 }

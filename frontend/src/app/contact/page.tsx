@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react'; // ✅ เพิ่ม useEffect
 import { Sarabun, Manrope } from 'next/font/google';
-import { useRouter } from "next/navigation"; // ใช้สำหรับเปลี่ยนหน้า
-import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
+import axios from 'axios'; // ✅ ต้องลง axios: npm install axios
 
 // --- Font Configuration ---
 const sarabun = Sarabun({
@@ -22,11 +21,11 @@ const manrope = Manrope({
   display: 'swap',
 });
 
-// --- 1. ข้อมูล FAQ (เพิ่มเข้ามา) ---
+// --- FAQ Data ---
 const faqs = [
   {
     question: "การประเมินราคาใช้เวลานานไหม?",
-    answer: "ปกติการประเมินราคาเบื้องต้นผ่านระบบจะทราบผลทันที แต่หากต้องการใบรับรองฉบับสมบูรณ์ เจ้าหน้าที่จะใช้เวลาตรวจสอบประมาณ 30-60 นาทีครับบ"
+    answer: "ปกติการประเมินราคาเบื้องต้นผ่านระบบจะทราบผลทันที แต่หากต้องการใบรับรองฉบับสมบูรณ์ เจ้าหน้าที่จะใช้เวลาตรวจสอบประมาณ 30-60 นาทีครับ"
   },
   {
     question: "มีค่าใช้จ่ายในการประเมินหรือไม่?",
@@ -47,18 +46,60 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSent, setIsSent] = useState(false);
   
+  // ✅ State สำหรับเก็บข้อมูลฟอร์ม
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    message: ''
+  });
+
   // State สำหรับ FAQ
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // ✅ ฟังก์ชันจัดการการพิมพ์ข้อมูล
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
+  };
+
+  // ✅ ฟังก์ชันส่งข้อมูลจริง
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // จำลองการส่งข้อมูล 1.5 วินาที
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setIsSent(true);
-    }, 1500);
+
+    try {
+        // 1. หา userId จาก localStorage (ถ้ามี)
+        let userId = null;
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+            const userObj = JSON.parse(userStr);
+            userId = userObj.id;
+        }
+
+        // 2. เตรียมข้อมูลส่ง
+        const payload = {
+            ...formData,
+            userId: userId
+        };
+
+        // 3. ยิง API
+        const res = await axios.post('/api/contact', payload);
+
+        if (res.data.success) {
+            setIsSent(true);
+            // เคลียร์ฟอร์ม
+            setFormData({ name: '', email: '', phone: '', message: '' });
+        }
+
+    } catch (error) {
+        console.error(error);
+        alert('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง');
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   const toggleFaq = (index: number) => {
@@ -102,21 +143,52 @@ export default function ContactPage() {
                     <form onSubmit={handleSubmit} className="space-y-5">
                       <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700" htmlFor="name">ชื่อ-นามสกุล</label>
-                        <input required className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] h-12 px-4 outline-none transition-all" id="name" placeholder="ระบุชื่อจริงและนามสกุลของคุณ" type="text"/>
+                        <input 
+                            required 
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] h-12 px-4 outline-none transition-all" 
+                            id="name" 
+                            type="text"
+                            placeholder="ระบุชื่อจริงและนามสกุลของคุณ" 
+                            value={formData.name}
+                            onChange={handleChange}
+                        />
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-2">
                           <label className="text-sm font-semibold text-slate-700" htmlFor="email">อีเมล</label>
-                          <input required className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] h-12 px-4 outline-none transition-all" id="email" placeholder="example@mail.com" type="email"/>
+                          <input 
+                            required 
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] h-12 px-4 outline-none transition-all" 
+                            id="email" 
+                            type="email"
+                            placeholder="example@mail.com" 
+                            value={formData.email}
+                            onChange={handleChange}
+                        />
                         </div>
                         <div className="space-y-2">
                           <label className="text-sm font-semibold text-slate-700" htmlFor="phone">เบอร์โทรศัพท์</label>
-                          <input required className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] h-12 px-4 outline-none transition-all" id="phone" placeholder="0xx-xxx-xxxx" type="tel"/>
+                          <input 
+                            required 
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] h-12 px-4 outline-none transition-all" 
+                            id="phone" 
+                            type="tel"
+                            placeholder="0xx-xxx-xxxx" 
+                            value={formData.phone}
+                            onChange={handleChange}
+                        />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-semibold text-slate-700" htmlFor="message">ข้อความ</label>
-                        <textarea required className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] min-h-[150px] p-4 outline-none transition-all resize-none" id="message" placeholder="ระบุรายละเอียดที่คุณต้องการสอบถาม..."></textarea>
+                        <textarea 
+                            required 
+                            className="w-full rounded-lg border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-[#137fec] focus:border-[#137fec] min-h-[150px] p-4 outline-none transition-all resize-none" 
+                            id="message" 
+                            placeholder="ระบุรายละเอียดที่คุณต้องการสอบถาม..."
+                            value={formData.message}
+                            onChange={handleChange}
+                        ></textarea>
                       </div>
                       <button 
                         disabled={isSubmitting}
@@ -144,19 +216,19 @@ export default function ContactPage() {
                       </div>
                       <h2 className="text-2xl font-bold mb-2">ส่งข้อความสำเร็จ!</h2>
                       <p className="text-slate-500 max-w-xs mx-auto mb-8">
-                         ขอบคุณที่ติดต่อเรา ทีมงานได้รับข้อความของคุณแล้วและจะติดต่อกลับโดยเร็วที่สุด
+                          ขอบคุณที่ติดต่อเรา ทีมงานได้รับข้อความของคุณแล้วและจะติดต่อกลับโดยเร็วที่สุด
                       </p>
                       <button 
                         onClick={() => setIsSent(false)}
                         className="text-[#137fec] font-bold hover:underline"
                       >
-                         ส่งข้อความใหม่
+                          ส่งข้อความใหม่
                       </button>
                   </div>
                 )}
               </div>
 
-              {/* Right Column: Info & Map */}
+              {/* Right Column: Info & Map (ส่วนนี้เหมือนเดิม) */}
               <div className="space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="p-6 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -195,10 +267,10 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                {/* Google Map Embed - RMUTP North Bangkok */}
+                {/* Google Map Embed */}
                 <div className="rounded-xl overflow-hidden h-[300px] border border-slate-200 shadow-inner relative bg-slate-100">
                     <iframe 
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3874.209675231718!2d100.51197937517926!3d13.826438895551908!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30e29b9f9a0388b1%3A0x67399882208c903!2sRajamangala%20University%20of%20Technology%20Phra%20Nakhon%20(North%20Bangkok%20Campus)!5e0!3m2!1sen!2sth!4v1709390000000!5m2!1sen!2sth" 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3874.6300983173166!2d100.51187831483095!3d13.82087699029964!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30e29b9f91f7c0c3%3A0x6a053f3e1f0e4256!2sRMUTP%20North%20Bangkok%20Campus!5e0!3m2!1sen!2sth!4v1689578234567!5m2!1sen!2sth" 
                         width="100%" 
                         height="100%" 
                         style={{ border: 0 }} 
@@ -229,7 +301,7 @@ export default function ContactPage() {
           </div>
         </section>
 
-        {/* --- 3. ส่วน FAQ Section (เพิ่มเข้ามาใหม่) --- */}
+        {/* --- FAQ Section --- */}
         <section id="faq" className="bg-white py-16 border-t border-slate-100 scroll-mt-24">
             <div className="mx-auto max-w-[800px] px-6">
                 <div className="text-center mb-10">
