@@ -1,222 +1,251 @@
 "use client";
 
-import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation"; // ใช้สำหรับเปลี่ยนหน้า
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import Link from "next/link";
 
-// Type ข้อมูล
-interface CarFormData {
-  Levy: number;
-  Manufacturer: string;
-  Model: string;
-  Prod_year: number;
-  Category: string;
-  Leather_interior: string;
-  Fuel_type: string;
-  Engine_volume: number;
-  Mileage: number;
-  Cylinders: number;
-  Gear_box_type: string;
-  Drive_wheels: string;
-  Doors: number;
-  Wheel: string;
-  Color: string;
-  Airbags: number;
-}
 
-interface PredictionResponse {
-  price: number;
-  currency: string;
-}
 
-// Type สำหรับรายการรถ { "TOYOTA": ["Prius", "Camry"], ... }
-interface CarOptions {
-  [key: string]: string[];
-}
+export default function ValuCarPage() {
+  const router = useRouter();
 
-export default function Home() {
-  // State เก็บข้อมูลฟอร์ม
-  const [formData, setFormData] = useState<CarFormData>({
-    Levy: 0,
-    Manufacturer: '',     // เริ่มต้นยังไม่เลือก
-    Model: '',            // เริ่มต้นยังไม่เลือก
-    Prod_year: 2015,
-    Category: 'Sedan',
-    Leather_interior: 'Yes',
-    Fuel_type: 'Petrol',
-    Engine_volume: 1.8,
-    Mileage: 100000,
-    Cylinders: 4,
-    Gear_box_type: 'Automatic',
-    Drive_wheels: 'Front',
-    Doors: 4,
-    Wheel: 'Left wheel',
-    Color: 'Black',
-    Airbags: 4
-  });
+  // --- State เก็บข้อมูล ---
+  const [options, setOptions] = useState<Record<string, string[]>>({}); // เก็บข้อมูลจาก API
+  const [loading, setLoading] = useState(true); // สถานะการโหลด API
 
-  // State เก็บตัวเลือกรถที่โหลดมาจาก API
-  const [carOptions, setCarOptions] = useState<CarOptions>({});
-  const [loadingOptions, setLoadingOptions] = useState<boolean>(true);
+  // State สำหรับฟอร์ม
+  const [levy, setLevy] = useState("");
+  const [prodYear, setProdYear] = useState("");
+  const [brand, setBrand] = useState("");
+  const [model, setModel] = useState("");
 
-  const [price, setPrice] = useState<number | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+  // สร้างลิสต์ปี (ปีปัจจุบัน ย้อนหลังไป 30 ปี)
+  const currentYear = new Date().getFullYear();
+  const yearList = Array.from({ length: 30 }, (_, i) => currentYear - i);
 
-  // 1. โหลดรายชื่อรถตอนเข้าเว็บครั้งแรก
+  // --- 1. โหลดข้อมูลยี่ห้อ/รุ่น จาก API ---
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const res = await axios.get<CarOptions>('https://car-price-api-szgc.onrender.com/car_options');
-        setCarOptions(res.data);
-        setLoadingOptions(false);
+        const res = await fetch('https://car-price-api-szgc.onrender.com/car_options');
+        const data = await res.json();
+        setOptions(data);
+        setLoading(false);
       } catch (error) {
-        console.error("Failed to load car options", error);
-        setLoadingOptions(false);
+        console.error("Failed to load options", error);
+        setLoading(false);
       }
     };
     fetchOptions();
   }, []);
 
-  // 2. Handle Change
-  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
-    
-    // ถ้ามีการเปลี่ยน "ยี่ห้อ" (Manufacturer)
-    if (name === 'Manufacturer') {
-      setFormData((prev) => ({
-        ...prev,
-        Manufacturer: value,
-        Model: '' // **สำคัญ** รีเซ็ตรุ่นรถให้ว่างก่อน เพราะรุ่นเก่าอาจจะไม่มีในยี่ห้อใหม่
-      }));
-    } else {
-      // กรณีอื่นๆ
-      const newValue = type === 'number' ? (value === '' ? 0 : parseFloat(value)) : value;
-      setFormData((prev) => ({ ...prev, [name]: newValue }));
+  // --- 2. ฟังก์ชันเลื่อนลงไปที่ฟอร์ม ---
+  const scrollToForm = () => {
+    const formElement = document.getElementById("car-form");
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: "smooth" });
     }
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    setPrice(null);
-
-    try {
-      const response = await axios.post<PredictionResponse>('https://car-price-api-szgc.onrender.com/predict', formData);
-      setPrice(response.data.price);
-    } catch (error) {
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่ออ");
-    } finally {
-      setLoading(false);
+  // --- 3. ฟังก์ชันกดปุ่มถัดไป ---
+  const handleNext = () => {
+    if (!levy || !prodYear || !brand || !model) {
+      alert("กรุณากรอกข้อมูลให้ครบถ้วนทุกช่องครับ");
+      return;
     }
+    // ส่งค่าผ่าน URL Query Params ไปหน้า detail
+    router.push(`/detail?levy=${levy}&year=${prodYear}&brand=${brand}&model=${model}`);
   };
-
-  // ดึงรายชื่อยี่ห้อทั้งหมดมาเรียง A-Z
-  const manufacturerList = Object.keys(carOptions).sort();
-  
-  // ดึงรายชื่อรุ่น ตามยี่ห้อที่เลือกอยู่ปัจจุบัน
-  const modelList = formData.Manufacturer ? carOptions[formData.Manufacturer] : [];
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto', fontFamily: 'system-ui' }}>
-      <h1>🚗 AI Car Price Predictor</h1>
+    <div className="bg-slate-50 font-sans text-slate-900 min-h-screen flex flex-col">
       
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1rem' }}>
+      {/* --- Header --- */}
+      <Navbar />
+
+      <main className="flex-1">
         
-        {/* === ส่วนเลือกยี่ห้อ (Dropdown) === */}
-        <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>ยี่ห้อ (Manufacturer)</label>
-          <select 
-            name="Manufacturer" 
-            value={formData.Manufacturer} 
-            onChange={handleChange} 
-            required 
-            style={inputStyle}
-            disabled={loadingOptions}
-          >
-            <option value="">-- กรุณาเลือกยี่ห้อ --</option>
-            {manufacturerList.map((brand) => (
-              <option key={brand} value={brand}>{brand}</option>
-            ))}
-          </select>
-        </div>
-        
-        {/* === ส่วนเลือกรุ่น (Dropdown แบบ Cascading) === */}
-        <div className="form-group">
-          <label style={{ display: 'block', marginBottom: '0.5rem' }}>รุ่น (Model)</label>
-          <select 
-            name="Model" 
-            value={formData.Model} 
-            onChange={handleChange} 
-            required 
-            style={inputStyle}
-            disabled={!formData.Manufacturer} // ล็อกไว้ถ้ายังไม่เลือกยี่ห้อ
-          >
-            <option value="">-- กรุณาเลือกรุ่น --</option>
-            {modelList && modelList.map((model) => (
-              <option key={model} value={model}>{model}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* === Input อื่นๆ (เหมือนเดิม) === */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          <div>
-            <label>ปีผลิต</label>
-            <input type="number" name="Prod_year" value={formData.Prod_year} onChange={handleChange} required style={inputStyle} />
+        {/* --- Hero Section --- */}
+        <section className="relative">
+          <div className="mx-auto max-w-[1280px] px-4 py-10 md:py-16">
+            <div className="@container">
+              <div className="relative overflow-hidden rounded-xl bg-slate-900 shadow-2xl">
+                <div 
+                  className="flex min-h-[520px] flex-col gap-8 bg-cover bg-center bg-no-repeat items-center justify-center p-8 text-center relative z-10"
+                  style={{
+                    backgroundImage: 'linear-gradient(rgba(16, 25, 34, 0.7) 0%, rgba(16, 25, 34, 0.4) 100%), url("https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?q=80&w=1000&auto=format&fit=crop")'
+                  }}
+                >
+                  <div className="max-w-3xl space-y-4">
+                    <h1 className="text-white text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
+                      ประเมินราคารถของคุณ
+                    </h1>
+                    <p className="text-slate-200 text-base md:text-xl font-medium max-w-xl mx-auto opacity-90">
+                      รับราคาประเมินตลาดที่แม่นยำและรวดเร็วสำหรับรถของคุณภายในไม่กี่วินาที ด้วยระบบ AI อัจฉริยะ
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4 mt-4">
+                    <button 
+                      onClick={scrollToForm}
+                      className="flex items-center justify-center rounded-lg h-12 px-8 bg-blue-600 text-white font-bold hover:bg-blue-700 transition-all min-w-[160px]"
+                    >
+                      เช็กราคาเลย
+                    </button>
+                    <button className="flex items-center justify-center rounded-lg h-14 px-8 bg-white/10 backdrop-blur-md border border-white/20 text-white text-lg font-bold hover:bg-white/20 transition-all">
+                      เรียนรู้เพิ่มเติม
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div>
-            <label>เครื่องยนต์ (ลิตร)</label>
-            <input type="number" step="0.1" name="Engine_volume" value={formData.Engine_volume} onChange={handleChange} required style={inputStyle} />
+        </section>
+
+        {/* --- Form Section --- */}
+        <section id="car-form" className="bg-white py-16 scroll-mt-20">
+          <div className="mx-auto max-w-[960px] px-6">
+            <div className="text-center mb-10">
+              <span className="inline-block px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-xs font-bold uppercase tracking-wider mb-4">ระบบคำนวณ</span>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900">ระบุข้อมูลรถยนต์ของคุณ</h2>
+              <p className="mt-2 text-slate-500">ระบุข้อมูลเบื้องต้นเพื่อรับราคาประเมินที่แม่นยำตามข้อมูลตลาดล่าสุด</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 bg-slate-50 p-8 rounded-2xl border border-slate-200 shadow-sm">
+              
+              {/* 1. ปีที่จดทะเบียน */}
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col flex-1">
+                  <p className="text-sm font-semibold pb-2 flex items-center gap-2 text-slate-700">
+                    <span className="material-symbols-outlined text-blue-600 text-lg">calendar_today</span>
+                    ปีที่จดทะเบียน (Levy Year)
+                  </p>
+                  <select 
+                    value={levy}
+                    onChange={(e) => setLevy(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer"
+                  >
+                    <option value="">เลือกปี</option>
+                    {yearList.map((y) => (
+                      <option key={`levy-${y}`} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {/* 2. ปีที่ผลิต */}
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col flex-1">
+                  <p className="text-sm font-semibold pb-2 flex items-center gap-2 text-slate-700">
+                    <span className="material-symbols-outlined text-blue-600 text-lg">event_available</span>
+                    ปีที่ผลิต (Production Year)
+                  </p>
+                  <select 
+                    value={prodYear}
+                    onChange={(e) => setProdYear(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer"
+                  >
+                    <option value="">เลือกปีที่ผลิต</option>
+                    {yearList.map((y) => (
+                      <option key={`prod-${y}`} value={y}>{y}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {/* 3. ยี่ห้อ (API) */}
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col flex-1">
+                  <p className="text-sm font-semibold pb-2 flex items-center gap-2 text-slate-700">
+                    <span className="material-symbols-outlined text-blue-600 text-lg">directions_car</span>
+                    ยี่ห้อ (Manufacturer)
+                  </p>
+                  <select 
+                    value={brand}
+                    onChange={(e) => {
+                      setBrand(e.target.value);
+                      setModel(""); // รีเซ็ตรุ่นเมื่อเปลี่ยนยี่ห้อ
+                    }}
+                    disabled={loading}
+                    className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer disabled:bg-gray-100"
+                  >
+                    <option value="">{loading ? "กำลังโหลด..." : "เลือกยี่ห้อ"}</option>
+                    {Object.keys(options).map((b) => (
+                      <option key={b} value={b}>{b}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {/* 4. รุ่น (API - Dynamic) */}
+              <div className="flex flex-col gap-2">
+                <label className="flex flex-col flex-1">
+                  <p className="text-sm font-semibold pb-2 flex items-center gap-2 text-slate-700">
+                    <span className="material-symbols-outlined text-blue-600 text-lg">minor_crash</span>
+                    รุ่น (Model)
+                  </p>
+                  <select 
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    disabled={!brand}
+                    className="w-full rounded-lg border border-slate-300 bg-white text-slate-900 h-14 px-4 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all cursor-pointer disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">{brand ? "เลือกรุ่น" : "กรุณาเลือกยี่ห้อก่อน"}</option>
+                    {brand && options[brand]?.map((m) => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              {/* Submit Button */}
+              <div className="md:col-span-2 mt-4">
+                <button 
+                  onClick={handleNext}
+                  className="w-full flex items-center justify-center gap-2 rounded-lg h-14 bg-blue-600 text-white text-base font-bold shadow-lg shadow-blue-600/25 hover:bg-blue-700 transition-all active:scale-[0.98]"
+                >
+                  <span className="material-symbols-outlined">arrow_forward</span>
+                  <span>ไปขั้นตอนถัดไป</span>
+                </button>
+              </div>
+
+            </div>
           </div>
-        </div>
+        </section>
 
-        <div>
-          <label>เลขไมล์ (กม.)</label>
-          <input type="number" name="Mileage" value={formData.Mileage} onChange={handleChange} required style={inputStyle} />
-        </div>
+        {/* --- Features Section --- */}
+        <section className="py-20 px-6 bg-white">
+          <div className="mx-auto max-w-[1280px]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="flex flex-col items-center text-center p-6 bg-slate-50 rounded-xl shadow-sm border border-slate-100">
+                <div className="size-14 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4">
+                  <span className="material-symbols-outlined text-3xl">bolt</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-slate-900">รู้ผลทันที</h3>
+                <p className="text-slate-500">รับราคาประเมินตลาดของรถคุณในเวลาไม่ถึง 30 วินาที</p>
+              </div>
+              <div className="flex flex-col items-center text-center p-6 bg-slate-50 rounded-xl shadow-sm border border-slate-100">
+                <div className="size-14 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4">
+                  <span className="material-symbols-outlined text-3xl">verified</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-slate-900">ข้อมูลแม่นยำ</h3>
+                <p className="text-slate-500">อัลกอริทึมของเราวิเคราะห์ข้อมูลการขายจริงหลายหมื่นรายการ</p>
+              </div>
+              <div className="flex flex-col items-center text-center p-6 bg-slate-50 rounded-xl shadow-sm border border-slate-100">
+                <div className="size-14 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4">
+                  <span className="material-symbols-outlined text-3xl">shield</span>
+                </div>
+                <h3 className="text-xl font-bold mb-2 text-slate-900">ปลอดภัยและเป็นส่วนตัว</h3>
+                <p className="text-slate-500">ข้อมูลของคุณได้รับการปกป้อง เราไม่เคยขายข้อมูลของคุณให้กับบุคคลที่สาม</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
 
-        <div>
-          <label>ระบบเกียร์</label>
-          <select name="Gear_box_type" value={formData.Gear_box_type} onChange={handleChange} style={inputStyle}>
-            <option value="Automatic">Automatic</option>
-            <option value="Manual">Manual</option>
-            <option value="Tiptronic">Tiptronic</option>
-            <option value="Variator">Variator</option>
-          </select>
-        </div>
-
-        <div>
-          <label>เชื้อเพลิง</label>
-          <select name="Fuel_type" value={formData.Fuel_type} onChange={handleChange} style={inputStyle}>
-            <option value="Petrol">Petrol</option>
-            <option value="Diesel">Diesel</option>
-            <option value="Hybrid">Hybrid</option>
-            <option value="LPG">LPG</option>
-            <option value="CNG">CNG</option>
-          </select>
-        </div>
-
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{ 
-            marginTop: '1rem', padding: '12px', 
-            backgroundColor: loading ? '#ccc' : '#2563eb', 
-            color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' 
-          }}
-        >
-          {loading ? '⏳ กำลังประมวลผล...' : '🔮 ทำนายราคา'}
-        </button>
-      </form>
-
-      {price !== null && (
-        <div style={{ marginTop: '2rem', padding: '1.5rem', backgroundColor: '#ecfdf5', border: '1px solid #10b981', borderRadius: '8px', textAlign: 'center' }}>
-          <h3>💰 ราคาประเมินน: ${price.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
-        </div>
-      )}
+      {/* --- Footer --- */}
+      <footer />
     </div>
   );
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #d1d5db', fontSize: '1rem', boxSizing: 'border-box'
-};
+} 

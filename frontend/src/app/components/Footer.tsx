@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 
+
 export default function Footer() {
   return (
     <footer className="bg-white border-t border-slate-200 py-12">
