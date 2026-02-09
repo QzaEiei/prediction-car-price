@@ -306,7 +306,7 @@ export default function ContactPage() {
             <div className="mx-auto max-w-[800px] px-6">
                 <div className="text-center mb-10">
                     <h2 className="text-2xl md:text-3xl font-bold mb-3 font-[family-name:var(--font-manrope)]">คำถามที่พบบ่อย (FAQ)</h2>
-                    <p className="text-slate-500">รวมคำถามยอดฮิตเกี่ยวกับการติดต่อและบริการของเรา</p>
+                    <p className="text-slate-500">รวมคำถามยอดฮิตเกี่ยวกับการติดต่อและบริการของเราา</p>
                 </div>
                 <div className="space-y-4">
                     {faqs.map((faq, index) => (

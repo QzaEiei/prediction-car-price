@@ -1,11 +1,11 @@
 // src/app/login/page.tsx
-"use client";
+'use client'; // 👈 1. ต้องมีบรรทัดนี้เสมอสำหรับหน้าที่มี Form/State
 
 import { useState } from 'react';
 import axios from 'axios';
 // ✅ 1. เพิ่ม useSearchParams เข้ามาด้วย
 import { useRouter, useSearchParams } from 'next/navigation'; 
-import Link from 'next/link';
+import Link from 'next/link'; // 👈 2. ต้อง Import Link มาด้วย
 import Navbar from '../components/Navbar';
 
 
