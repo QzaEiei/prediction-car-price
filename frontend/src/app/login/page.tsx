@@ -40,15 +40,15 @@ function LoginForm() {
 
       if (res.status === 200) {
         localStorage.setItem('user', JSON.stringify(res.data.user));
-        
+
         // ใช้ SweetAlert2 แทน alert ธรรมดาถ้าลงไว้ (ถ้าไม่มีใช้ alert เดิมก็ได้)
         // alert('เข้าสู่ระบบสำเร็จ! 🎉'); 
 
         const returnUrl = searchParams.get('returnUrl');
         if (returnUrl) {
-           window.location.href = decodeURIComponent(returnUrl);
+          window.location.href = decodeURIComponent(returnUrl);
         } else {
-           window.location.href = '/';
+          window.location.href = '/';
         }
       }
     } catch (err: any) {
@@ -122,14 +122,14 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       <Navbar />
-      
+
       {/* ✅ จุดสำคัญ: ต้องเอา Suspense มาครอบ Component ที่มีการใช้ useSearchParams 
           fallback คือสิ่งที่แสดงระหว่างรอโหลด params (ปกติจะเร็วมากจนมองไม่ทัน)
       */}
       <Suspense fallback={<div className="flex-grow flex items-center justify-center">Loading...</div>}>
         <LoginForm />
       </Suspense>
-      
+
     </div>
   );
 }
