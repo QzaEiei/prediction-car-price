@@ -1,12 +1,17 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import pandas as pd
-import joblib
-import numpy as np
-import traceback 
-from fastapi.middleware.cors import CORSMiddleware
-import os
-from typing import Union 
+from fastapi import FastAPI, HTTPException # หน้าที่: คอยเปิด Server รอรับออเดอร์ (Request) จากหน้าเว็บ (Frontend) และส่งข้อมูลกลับไป (Response/ราคาที่ทำนาย) กลับไป
+from fastapi.middleware.cors import CORSMiddleware #หน้าที่: ปกติ Backend จะหวงบ้าน ไม่ยอมให้เว็บอื่นเข้ามาคุยด้วย แต่ตัวนี้จะช่วย "อนุญาต" ให้ Frontend
+
+from pydantic import BaseModel # กำหนดว่า Frontend "ต้อง" ส่งข้อมูลอะไรมาบ้าง และต้องเป็นประเภทไหน
+from typing import Union # หน้าที่: บอก Python ว่าตัวแปรนี้เป็นได้หลายแบบนะ เช่น Union[str, None]
+
+import pandas as pd # หน้าที่: โมเดล AI ส่วนใหญ่รับข้อมูลเป็นตาราง Pandas จะช่วยรับข้อมูลเดี่ยวๆ (ปี, เลขไมล์) แล้ว "จัดรูปขบวน" ให้เป็นตาราง 1 แถว เพื่อส่งเข้าโมเดล
+import joblib #เอาไว้โหลด ไฟล์ pk
+import numpy as np # หน้าที่: จัดการเรื่องตัวเลขและอาร์เรย์
+
+import traceback # หน้าที่: เวลาระบบพัง (Crash) ตัวนี้จะปริ้นท์ออกมาบอกละเอียดยิบว่า "พังที่บรรทัดไหน ไฟล์อะไร เพราะอะไร"
+
+import os # หน้าที่: ช่วยหาที่อยู่ไฟล์
+
 
 # ==========================================
 # 1. SETUP & LOAD RESOURCES
@@ -82,7 +87,7 @@ def read_root():
 def predict_price(item: CarItem):
     try:
         # ====================================================
-        # 1. CLEANING DATA (เหมือนเดิม เพราะทำดีแล้ว)
+        # 1. CLEANING DATA 
         # ====================================================
         clean_levy = 0
         try:
