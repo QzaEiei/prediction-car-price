@@ -81,8 +81,9 @@ export default function ValuCarPage() {
                     alt="Car Background"
                     fill
                     priority
-                    className="object-cover -z-20"
+                    className="object-cover"
                   />
+                  <div className="absolute inset-0 bg-black opacity-60"></div>
 
                   {/* 2. เงาสีดำ (Gradient) เพื่อให้อ่านตัวหนังสือออก (วางทับรูปด้วย -z-10) */}
                   <div className="absolute inset-0 bg-gradient-to-b from-slate-900/70 to-slate-900/40 -z-10" />
